@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(& \"C:\\\\Users\\\\KAMILD~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Workspace-Projects-AgentHub\\\\5d02a8f0-ee50-4400-942d-e724b173533b\\\\scratchpad\\\\codex-probe.ps1\" -Exe \"$env:LOCALAPPDATA\\\\OpenAI\\\\Codex\\\\bin\\\\896a0166b774037a\\\\codex.exe\")",
+      "Bash(node -e ' *)",
+      "Bash(node *)",
+      "PowerShell(Get-Content *)"
+    ]
+  }
+}

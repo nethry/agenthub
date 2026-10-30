@@ -1,0 +1,61 @@
+[package]
+name = "agenthub"
+version = "0.1.0"
+description = "Project-centric desktop workspace for code, terminals, and AI coding agents"
+edition = "2021"
+rust-version = "1.80"
+
+[lib]
+name = "agenthub_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+# Updates: check, download and install run in Rust (the webview's CSP stays closed to remote origins).
+tauri-plugin-updater = { version = "2", default-features = false, features = ["zip", "native-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+portable-pty = "0.9"
+rusqlite = { version = "0.40", features = ["bundled"] }
+uuid = { version = "1", features = ["v4"] }
+thiserror = "2"
+dunce = "1"
+which = "8"
+parking_lot = { version = "0.12", features = ["arc_lock"] }
+trash = "5.2.3"
+encoding_rs = "0.8.35"
+notify = "8.2.0"
+notify-debouncer-full = "0.6.0"
+# AI Chat: HTTPS to the provider APIs (OS TLS: SChannel on Windows) and streaming.
+reqwest = { version = "0.13", default-features = false, features = ["native-tls", "http2", "system-proxy", "stream"] }
+futures-util = "0.3"
+tokio = { version = "1", features = ["macros", "rt", "sync", "time"] }
+similar = "2"
+# Pasted chat images travel as base64 (frontend → Rust → runtime).
+base64 = "0.22"
+
+# AI Chat API keys live in the OS credential store, never in SQLite.
+[target.'cfg(windows)'.dependencies]
+keyring = { version = "3.6", features = ["windows-native"] }
+# Git runs in a Job Object, so cancelling (or a crash) ends git and every helper it started.
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_JobObjects", "Win32_System_Threading", "Win32_Security"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6", features = ["apple-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3.6", features = ["sync-secret-service", "crypto-rust"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#05080D"/>
+  <g fill="none" stroke="#4DA3FF" stroke-width="44" stroke-linejoin="miter">
+    <polygon points="512 112 858 312 858 712 512 912 166 712 166 312"/>
+    <circle cx="512" cy="512" r="128"/>
+  </g>
+  <g fill="none" stroke="#4DA3FF" stroke-width="20">
+    <path d="M60 60h120M60 60v120M964 964h-120M964 964v-120"/>
+  </g>
+</svg>

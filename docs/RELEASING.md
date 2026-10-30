@@ -1,0 +1,29 @@
+# Releasing AgentHub
+
+Installed copies check GitHub Releases for `latest.json` (at start and once a day) and offer the new version in the app. Nothing downloads or restarts without the user's say-so.
+
+## One-time setup
+
+1. **Repository.** The project folder isn't a Git repository yet: `git init`, commit, create the GitHub repository and push `main`.
+2. **Release address.** In `src-tauri/tauri.conf.json` replace `OWNER/REPO` in `plugins.updater.endpoints` with your repository (`https://github.com/<owner>/<repo>/releases/latest/download/latest.json`). Until then the app says "Updates aren't set up yet".
+3. **Signing key.** The updater's key pair was generated with `pnpm tauri signer generate` and is in `%USERPROFILE%\.tauri\agenthub-updater.key` (private) and `.key.pub` (public; its contents are already `plugins.updater.pubkey`). It has **no password**: set one if you generate a new key.
+   - Add repository secrets `TAURI_SIGNING_PRIVATE_KEY` (the content of the `.key` file) and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (empty or the password).
+   - **Back the private key up somewhere safe, outside the repository, and never commit it.** Without it you can't sign updates any more, and installed copies can never update again (they would need a manual reinstall with a new public key).
+4. **Windows code signing is not set up.** Installers are unsigned, so SmartScreen warns on first install. This is separate from the updater key above. Adding an Authenticode certificate (or Azure Trusted Signing) is a follow-up.
+
+## Making a release
+
+1. Pick the version and set it everywhere: `pnpm version:set 0.2.0` (updates `package.json`, `sidecar/package.json` and `src-tauri/Cargo.toml`; `tauri.conf.json` reads `package.json`). `pnpm version:check` fails if the files disagree.
+2. Run the checks (`pnpm typecheck`, `pnpm test`, `pnpm sidecar:test`, `cargo test`, `cargo clippy`), commit, and tag: `git tag v0.2.0 && git push --tags`.
+3. The **Release** workflow builds the NSIS and MSI installers, signs the update payload and creates a **draft** release with `latest.json`. Write the release notes in the draft: the app shows them (Markdown) in its update dialog.
+4. **Publish the draft.** Only then does `releases/latest/download/latest.json` point at it and installed copies find it.
+
+## Taking a bad release back
+
+Never reuse or delete-and-recreate a version number that people may have installed. Publish a fixed higher version (e.g. 0.2.1). Unpublishing a release stops new downloads but doesn't undo installs.
+
+## Notes
+
+- Tagging runs on `windows-latest`; the workflow can't be tested without the repository, so the first tag is the real test. Try it with a throwaway `v0.1.1-test` pre-release first.
+- Known gap: the installed app still can't run Claude Agent or Copilot because the sidecar's `node_modules` (about 450 MB) aren't bundled (see the README milestones). When that is fixed the installer, and so each full update, gets much larger.
+- Updates are verified against the public key in `tauri.conf.json`; a payload with a missing or wrong signature is refused.

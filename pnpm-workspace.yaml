@@ -1,0 +1,7 @@
+packages:
+  - sidecar
+allowBuilds:
+  esbuild: true
+  koffi: false
+minimumReleaseAgeExclude:
+  - lucide-react@1.60.0

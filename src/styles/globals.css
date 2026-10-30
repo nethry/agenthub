@@ -1,0 +1,600 @@
+@import "tailwindcss";
+
+/* Midnight HUD tokens — see README "Visual direction". */
+@theme {
+  --color-ground: #05080d;
+  --color-surface: #0a111a;
+  --color-well: #03060a;
+  --color-line: #1c3049;
+  --color-line-strong: #3a4f69;
+  --color-line-dim: #12202f;
+  --color-dash: #2a425f;
+  /* Empty part of usage meters. */
+  --color-track: #14243a;
+
+  --color-accent: #4da3ff;
+  --color-accent-hover: #a8d1ff;
+  --color-on-accent: #020a18;
+
+  --color-fg: #dcebff;
+  --color-body: #a3b8cf;
+  --color-term: #bcd0e6;
+  --color-muted: #8aa0b8;
+  --color-dim: #4c627a;
+
+  --color-run: #3df5a0;
+  --color-warn: #ffb547;
+  --color-danger: #ff5470;
+  --color-danger-soft: #ff9aab;
+  --color-on-danger: #1a0207;
+  --color-tag: #b79cff;
+  /* v2 unified Chat: mode colors (always paired with a label) and the user-message fill. */
+  --color-plan: #b79cff;
+  --color-agent: #38e1ff;
+  --color-raised: #0f1a28;
+
+  --font-display: "Rajdhani", sans-serif;
+  --font-sans: "Chakra Petch", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: var(--color-ground);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+    border-radius: 0;
+  }
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+  input,
+  textarea,
+  [contenteditable] {
+    user-select: text;
+  }
+  a {
+    color: var(--color-accent);
+  }
+  a:hover {
+    color: var(--color-accent-hover);
+  }
+  :focus-visible {
+    outline: 1px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+  ::selection {
+    background: rgb(77 163 255 / 0.35);
+  }
+  /* Lucide icons: 1.5 stroke, square caps, miter joins. */
+  svg.lucide {
+    stroke-width: 1.5;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    flex: none;
+  }
+  svg.lucide.icon-strong {
+    stroke-width: 2.5;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-line-strong);
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+@layer components {
+  /* Corner brackets on panels, cards and dialogs. They draw in on mount. */
+  .hud {
+    position: relative;
+  }
+  .hud::before,
+  .hud::after {
+    content: "";
+    position: absolute;
+    width: var(--hud-size, 9px);
+    height: var(--hud-size, 9px);
+    pointer-events: none;
+    border: 0 solid var(--hud-color, var(--color-accent));
+    animation: hud-draw 240ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    z-index: 1;
+  }
+  .hud::before {
+    top: -1px;
+    left: -1px;
+    border-top-width: var(--hud-weight, 1px);
+    border-left-width: var(--hud-weight, 1px);
+  }
+  .hud::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom-width: var(--hud-weight, 1px);
+    border-right-width: var(--hud-weight, 1px);
+  }
+  .hud-danger {
+    --hud-color: var(--color-danger);
+  }
+  .hud-warn {
+    --hud-color: var(--color-warn);
+  }
+  .hud-plan {
+    --hud-color: var(--color-plan);
+  }
+  .hud-agent {
+    --hud-color: var(--color-agent);
+  }
+
+  .gridbg {
+    background-image:
+      linear-gradient(rgb(77 163 255 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(77 163 255 / 0.035) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .scan {
+    background-image: repeating-linear-gradient(0deg, rgb(77 163 255 / 0.03) 0 1px, transparent 1px 3px);
+  }
+
+  /* 8px chamfer for primary / danger buttons only. */
+  .chamfer {
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  }
+
+  .label-caps {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  /* BUSY: running and active (orange). The steady shadow stays under reduced motion. */
+  .busy-pulse {
+    background-color: var(--color-warn);
+    box-shadow: 0 0 7px 1px #ffb547;
+    animation: busy-pulse 1.6s ease-in-out infinite;
+  }
+
+  .glow-text {
+    text-shadow: 0 0 14px rgb(77 163 255 / 0.45);
+  }
+
+  .kbd {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    padding: 1px 6px;
+    border: 1px solid var(--color-line);
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+}
+
+@keyframes hud-draw {
+  from {
+    width: 0;
+    height: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes busy-pulse {
+  50% {
+    box-shadow: 0 0 2px 0 rgb(255 181 71 / 0.35);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Markdown preview (editor). Body copy 13/20, code 12.5/21. */
+.md-preview {
+  color: var(--color-body);
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.md-preview > :first-child {
+  margin-top: 0;
+}
+.md-preview :is(p, ul, ol, blockquote, pre, table, hr) {
+  margin: 0 0 14px;
+}
+.md-preview :is(h1, h2, h3, h4, h5, h6) {
+  margin: 24px 0 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  color: var(--color-fg);
+}
+.md-preview h1 {
+  font-size: 26px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-line);
+}
+.md-preview h2 {
+  font-size: 20px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-line-dim);
+}
+.md-preview h3 {
+  font-size: 16px;
+}
+.md-preview :is(h4, h5, h6) {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.md-preview :is(strong, b) {
+  color: var(--color-fg);
+  font-weight: 600;
+}
+.md-preview :is(ul, ol) {
+  padding-left: 22px;
+}
+.md-preview li + li {
+  margin-top: 3px;
+}
+.md-preview li > :is(ul, ol) {
+  margin: 3px 0 0;
+}
+.md-preview li::marker {
+  color: var(--color-dim);
+}
+.md-preview li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: -20px;
+}
+.md-preview input[type="checkbox"] {
+  margin: 0 6px 0 0;
+  vertical-align: -2px;
+  accent-color: var(--color-accent);
+}
+.md-preview a {
+  text-decoration: underline;
+  text-decoration-color: rgb(77 163 255 / 0.4);
+  text-underline-offset: 2px;
+}
+.md-preview code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 1px 5px;
+  border: 1px solid var(--color-line-dim);
+  background: var(--color-surface);
+  color: var(--color-fg);
+}
+.md-preview pre {
+  padding: 10px 14px;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  overflow-x: auto;
+  overflow-wrap: normal;
+}
+.md-preview pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12.5px;
+  line-height: 21px;
+  color: var(--color-term);
+}
+.md-preview blockquote {
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--color-line-strong);
+  color: var(--color-muted);
+}
+.md-preview blockquote > :last-child {
+  margin-bottom: 0;
+}
+.md-preview hr {
+  height: 0;
+  border: 0;
+  border-top: 1px solid var(--color-line);
+}
+.md-preview table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  overflow-wrap: normal;
+}
+.md-preview :is(th, td) {
+  padding: 5px 12px;
+  border: 1px solid var(--color-line);
+  text-align: left;
+}
+.md-preview th {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--color-fg);
+  background: var(--color-surface);
+}
+.md-preview .md-image {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: 1px dashed var(--color-dash);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
+/* xterm.js host */
+.xterm-host {
+  height: 100%;
+  width: 100%;
+}
+.xterm-host .xterm {
+  height: 100%;
+  padding: 10px 0 0 14px;
+}
+.xterm-host .xterm-viewport {
+  background-color: transparent !important;
+}
+.xterm-host .xterm-screen canvas {
+  background: transparent;
+}
+
+/* AI Chat answers (design: Chat — Active conversation). Body 14/23, code 12.5/20. */
+.chat-md {
+  color: var(--color-fg);
+  font-size: 14px;
+  line-height: 23px;
+  overflow-wrap: anywhere;
+}
+.chat-md > :first-child {
+  margin-top: 0;
+}
+.chat-md > :last-child {
+  margin-bottom: 0;
+}
+.chat-md :is(p, ul, ol, blockquote, table, hr, .chat-code) {
+  margin: 0 0 12px;
+}
+.chat-md :is(h1, h2, h3, h4, h5, h6) {
+  margin: 16px 0 8px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-fg);
+}
+.chat-md h1 {
+  font-size: 18px;
+}
+.chat-md h2 {
+  font-size: 16px;
+}
+.chat-md :is(h3, h4, h5, h6) {
+  font-size: 14.5px;
+}
+.chat-md :is(strong, b) {
+  font-weight: 600;
+}
+.chat-md :is(ul, ol) {
+  padding-left: 22px;
+}
+/* Tailwind's preflight removes list markers; answers need them. */
+.chat-md ol {
+  list-style: decimal;
+}
+.chat-md ul {
+  list-style: disc;
+}
+.chat-md li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: -20px;
+}
+.chat-md li + li {
+  margin-top: 4px;
+}
+.chat-md li > :is(ul, ol) {
+  margin: 4px 0 0;
+}
+.chat-md li::marker {
+  color: var(--color-muted);
+}
+.chat-md a {
+  text-decoration: underline;
+  text-decoration-color: rgb(77 163 255 / 0.4);
+  text-underline-offset: 2px;
+}
+.chat-md :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  padding: 1px 5px;
+  border: 1px solid var(--color-line);
+  background: #0f1a28;
+  color: var(--color-accent-hover);
+}
+.chat-md blockquote {
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--color-line-strong);
+  color: var(--color-body);
+}
+.chat-md hr {
+  height: 0;
+  border: 0;
+  border-top: 1px solid var(--color-line);
+}
+.chat-md table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  overflow-wrap: normal;
+  font-size: 13px;
+}
+.chat-md :is(th, td) {
+  padding: 5px 12px;
+  border: 1px solid var(--color-line);
+  text-align: left;
+}
+.chat-md th {
+  font-weight: 600;
+  background: var(--color-surface);
+}
+.chat-md input[type="checkbox"] {
+  margin: 0 6px 0 0;
+  vertical-align: -2px;
+  accent-color: var(--color-accent);
+}
+.chat-md .md-image {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: 1px dashed var(--color-dash);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-muted);
+}
+.chat-code-body {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 20px;
+  color: var(--color-fg);
+  white-space: pre;
+  user-select: text;
+}
+/* Streaming caret after the last block of the answer. */
+.chat-md.is-streaming > :last-child::after {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  margin-left: 2px;
+  vertical-align: -3px;
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent);
+  animation: chat-blink 1s steps(1) infinite;
+}
+.chat-md.is-streaming > .chat-code:last-child::after {
+  display: none;
+}
+.gen-dot {
+  animation: chat-pulse 1.2s infinite;
+}
+.gen-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.gen-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.skel {
+  background: linear-gradient(90deg, #0f1a28 0, #18283c 50%, #0f1a28 100%);
+  background-size: 400px 100%;
+  animation: chat-shimmer 1.4s linear infinite;
+}
+@keyframes chat-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes chat-pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+@keyframes chat-shimmer {
+  from {
+    background-position: -200px 0;
+  }
+  to {
+    background-position: 200px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-md.is-streaming > :last-child::after,
+  .gen-dot,
+  .skel {
+    animation: none !important;
+  }
+  .gen-dot {
+    opacity: 1;
+  }
+}
+
+/* Streaming / running chips and the running-agent avatar: the only looping glow. */
+.live-glow {
+  animation: live-glow 1.6s ease-in-out infinite;
+}
+@keyframes live-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgb(56 225 255 / 0);
+  }
+  50% {
+    box-shadow: 0 0 10px rgb(56 225 255 / 0.65);
+  }
+}
+.rise {
+  animation: rise 0.22s ease-out both;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-glow,
+  .rise {
+    animation: none !important;
+  }
+}
