@@ -982,9 +982,12 @@ mod tests {
         let at_prompt = |s: &SessionInfo| {
             s.activity_source == Some(ActivitySource::Shell) && s.activity == Some(Activity::Idle)
         };
+        // Only the first prompt is slow: a cold, elevated PowerShell on a busy CI
+        // runner took over 30 s, while later steps take well under a second.
         assert!(
-            wait_for(mgr, &info.id, 30, at_prompt),
-            "{shell}: no prompt marks; output: {:?}",
+            wait_for(mgr, &info.id, 120, at_prompt),
+            "{shell}: no prompt marks; state: {:?}; output: {:?}",
+            mgr.list().iter().find(|s| s.id == info.id).map(|s| (s.status, s.activity, s.activity_source)),
             mgr.snapshot(&info.id).unwrap()
         );
         let command = if shell == "cmd" {
