@@ -4,7 +4,7 @@
 
 AgentHub brings local projects, source files, persistent shells and one unified AI Chat into a single desktop application. Each project has its own conversations with local coding agents — **Claude Agent** (Claude Agent SDK), **OpenAI Codex**, **Gemini CLI**, **Google Antigravity**, **GitHub Copilot CLI** — or with direct APIs (**OpenAI**, **Anthropic**, **Gemini**), in Ask, Plan or Agent mode, with approvals, file-change review and session recovery.
 
-> **Project status:** Windows MVP (v0.1.0) plus the v2 unified Chat. The checked items under [MVP milestones](#mvp-milestones) are built; see [Verification status](#verification-status) for what has only been tested against recorded protocol fixtures. macOS/Linux and the "Later enhancements" are not built.
+> **Project status:** in active development, Windows first (the version is in `package.json`; releases are published on GitHub). The [Roadmap](#roadmap-and-history) lists what is built and what is next; [Verification status](#verification-status) says what has only been tested against recorded protocol fixtures or mock servers. macOS and Linux are planned, not built.
 
 ## Product vision
 
@@ -23,7 +23,7 @@ Core principles:
 
 | Platform | Priority | Status |
 | --- | --- | --- |
-| Windows 10/11 | First | MVP target |
+| Windows 10/11 | First | Supported |
 | macOS | Later | Planned |
 | Linux | Later | Planned |
 
@@ -52,7 +52,7 @@ Native terminal implementations and platform packaging will be validated separat
 - Keep PTY processes owned by the backend, independent of what the frontend is displaying.
 - Support terminal input/output, resize events, ANSI formatting, copy/paste, and scrollback.
 
-**Lifecycle rule:** changing projects or hiding a terminal must not terminate its process. Closing AgentHub may terminate managed processes in the MVP; durable process reattachment across application restarts is **out of scope** initially.
+**Lifecycle rule:** changing projects or hiding a terminal must not terminate its process. Closing AgentHub ends its managed processes; reattaching terminal sessions across application restarts is **not supported**.
 
 ### 3. File explorer and editor
 
@@ -63,23 +63,24 @@ Native terminal implementations and platform packaging will be validated separat
 - Edit, save, and detect unsaved changes. Saves are atomic: the file is written to a temp file next to it, then renamed over it, with a fallback to a direct write when the rename is refused.
 - Encodings (`encoding_rs`): UTF-8 (with or without BOM) and, by BOM, UTF-16 LE/BE open automatically and are saved back the same way. A file that isn't valid UTF-8 can be reopened from the status bar or the error panel in another encoding (e.g. Windows-1250, ISO-8859-2, Windows-1252, Shift JIS). Characters the encoding can't hold are refused on save, never silently replaced.
 - Files over 5 MB open **read-only**; files over 50 MB and binary files don't open.
+- Switch the sidebar between **Files** and **Source control** (Git, below).
 - Support multiple open files and restore the active file per project.
 - Provide keyboard shortcuts for common editing actions. Monaco's `Ctrl K` chords work in the editor; there the palette opens with `Ctrl P` (files) or `Ctrl Shift P` (commands).
 - Prompt before losing unsaved changes: closing a tab, quitting (with **Save all and quit**), and removing a project (lists the unsaved files and offers **Save all and remove**).
 - Preview Markdown files, live as you type. They open in Preview; the Code / Split / Preview toggle in the breadcrumb bar switches view per file. Rendered with `react-markdown` + `remark-gfm` (GitHub tables, task lists, strikethrough). File content is untrusted: raw HTML isn't rendered, images aren't fetched (shown as a placeholder with their alt text), relative links open the file in the editor and can't leave the project root, and only http(s) links open externally.
 
-Initial scope is a lightweight code editor, **not** a complete IDE: no built-in debugger, extension marketplace, or full language-server platform.
+The editor stays a lightweight code editor, **not** a complete IDE: no built-in debugger, extension marketplace, or full language-server platform. Git is covered by the Source control sidebar below.
 
 #### Source control (Git)
 
 Git lives inside the Editor, sized for reviewing and sharing what coding agents changed (design canvas page **v2 · Editor & Git**, trimmed). The sidebar switches between **Files** and **Source control**; the workspace header shows a branch chip (`⑂ main ↓1 ↑2`) and the editor status bar the branch and sync counts. Agents never commit or push: you review, stage and commit their changes.
 
-- **Changes:** Conflicts, Staged changes and Changes, each file with its status letter (M, A/U, D, R, C), an **AI** badge when an agent changed it in Chat and it isn't committed yet, and **PART** when it is partly staged (e.g. from a terminal). Stage, unstage and discard work on **whole files**; discarding asks inline and moves the current file to the **Recycle Bin** first. The file tree shows the same letters.
+- **Changes:** Conflicts, Staged changes and Changes, each file with its status letter (M, A/U, D, R, C), an **AI** badge when an agent changed it in Chat and it isn't committed yet, and **PART** when it is partly staged (e.g. from a terminal). Stage, unstage and discard work on **whole files**; discarding asks inline and moves the current file to the **Recycle Bin** first. Clicking a row opens the file (the diff tab is planned). The file tree shows the same letters.
 - **Commit:** message box with a 72-character subject counter, **Amend last commit** (only while it isn't pushed), and **Add AI co-author trailer** when staged files include agent changes (`Co-authored-by: OpenAI Codex <noreply@openai.com>`; one vendor noreply address per engine; default in Settings › Git). Commit, or **& Push**; `Ctrl Enter` / `Ctrl Shift Enter` in the box. Hook output streams while hooks run; a failing hook commits nothing.
 - **Sync:** Fetch (all remotes), Pull (fetch, then fast-forward or rebase local commits onto the upstream with autostash), Push (never forced), Publish (`push -u` for a branch without upstream). A rejected push explains why and offers **Pull & push**. Progress streams and can be cancelled.
 - **Stopped operations:** when a pull's rebase (or a rebase, merge, cherry-pick or revert started in a terminal) stops on conflicts, a banner lists the conflicted files: fix the markers in the editor, stage the files (staging a file that still has markers asks first), then **Continue**, or **Abort** (confirmed).
 - **Safety:** git runs as the system `git` (Git for Windows 2.41+, path override in Settings › Git) with argument lists in the repository folder, never a shell string, `GIT_TERMINAL_PROMPT=0`, and in a Windows Job Object so cancel ends its helpers too. Sign-in goes through Git Credential Manager; AgentHub stores no Git secrets and redacts tokens and `user:pass@` URLs from git output. Operations that rewrite files (discard, pull, Continue, Abort) are refused while affected editor files have unsaved changes (the banner offers **Save all**), and editors reload afterwards. A folder Git doesn't trust (dubious ownership) offers **Trust this folder** (adds it to `safe.directory`).
-- **Not built (deliberate departures from the canvas):** hunk and line staging, merging branches and the 3-way resolver, interactive rebase, a Stashes panel (stash only from the switch dialog), blame, cherry-pick, detached checkout, "Branch here", remote management, and the AI helpers "Draft message" and "Suggest resolution". Branches, the read-only diff tab and History arrive in the next milestones (see Phase 6).
+- **Not built yet:** the canvas shows more than is implemented. Planned, in this order (see Phase 6): typed editor tabs with a read-only diff tab, then branches (picker, Branches tab, switch with stash), then History with the commit graph, Revert, Undo last commit and Reset. **Left out on purpose:** hunk and line staging, merging branches and the 3-way resolver, interactive rebase, a Stashes panel (stash only from the switch dialog), blame, cherry-pick, detached checkout, "Branch here", remote management, and the AI helpers "Draft message" and "Suggest resolution".
 
 ### 4. Unified Chat (coding agents and direct APIs)
 
@@ -105,7 +106,7 @@ AgentHub is the client and orchestrator: there is no OpenCode or other middle la
 - **Status chips** (list, header, Overview, rail): *Streaming*, *Running* (both glow), *Approve*, *Interrupted*, *Error*, *Stopped*, *Done*. Approve, Interrupted and Error add to the amber count on the rail and on the Chat tab.
 - **Direct APIs** keep the v1 behavior: streaming, Stop (`Esc`), Regenerate/Retry (never automatic), normalized errors, context rebuilt from local storage within ~90k tokens (older messages left out are counted in the transcript). Gemini answers end on the chunk carrying `finishReason`; a `400 API_KEY_INVALID` is reported as an invalid key.
 - **Keys and accounts.** OpenAI, Anthropic and Gemini API keys live in the OS credential store (read only in Rust; the UI sees the last four characters). The Anthropic key is also what Claude Agent uses — Anthropic doesn't allow third-party apps to offer claude.ai subscription login through the Agent SDK, so AgentHub doesn't. Gemini CLI uses the Gemini API key (Google no longer lets personal accounts sign in to Gemini CLI; they use Antigravity). Codex and Copilot use their own sign-in; Antigravity signs in with Google through **Sign in with Google** in Settings, which runs the server's own browser sign-in only when you click it. AgentHub never reads any runtime's credential files.
-- **Settings › AI integrations** lists each runtime's detection (path, version, account label, sign-in state, enforceable modes and notes) with **Recheck**, a path override, and install/sign-in commands typed into a terminal for you to run; then the direct-API keys (save & test, replace, remove, list models, custom model IDs, Anthropic max output tokens), the capability matrix and the default approval policy. Every integration has an on/off switch (the backend owns it: `engines_disabled` setting). A turned-off integration is never probed or started (Codex's usage windows aren't fetched either), its turns are refused, its idle runtime sessions are closed, and its chats, models, status, usage meter and changed files are hidden everywhere (engine menu, chat lists, Overview, palette, rail and tab counts). Nothing is deleted, and turning it back on re-probes it. Turning one off is refused while one of its turns runs. A direct-API key stays editable while an agent that runs on it (Claude Agent on Anthropic, Gemini CLI on Gemini) is on. **Settings › Chat** holds the default engines (projects / General), default mode and the send key.
+- **Settings › AI integrations** lists each runtime's detection (path, version, account label, sign-in state, enforceable modes and notes) with **Recheck**, a path override, and install/sign-in commands typed into a terminal for you to run; then the direct-API keys (save & test, replace, remove, list models, custom model IDs, Anthropic max output tokens), the capability matrix and the default approval policy. Every integration has an on/off switch (the backend owns it: `engines_disabled` setting). A turned-off integration is never probed or started (Codex's usage windows aren't fetched either), its turns are refused, its idle runtime sessions are closed, and its chats, models, status, usage meter and changed files are hidden everywhere (engine menu, chat lists, Overview, palette, rail and tab counts). Nothing is deleted, and turning it back on re-probes it. Turning one off is refused while one of its turns runs. A direct-API key stays editable while an agent that runs on it (Claude Agent on Anthropic, Gemini CLI on Gemini) is on. **Settings › Chat** holds the default engines (a coding agent for projects, a direct API for Ask) and the send key.
 
 #### Usage limits
 
@@ -134,13 +135,13 @@ Busy/idle describes terminals only. Agent conversations get their state from the
 
 ### 6. Automatic updates
 
-Installed copies find new versions by themselves and install them only when you say so (design: none yet, plain Midnight HUD dialogs).
+Installed copies find new versions by themselves and install them only when you say so (no canvas design; plain Midnight HUD dialogs).
 
 - **Checks:** about 30 seconds after start and then once a day (at most every 12 hours, so frequent restarts don't hit the host), from Rust: the webview's CSP is closed to remote origins, so the updater plugin (`tauri-plugin-updater`) checks, downloads and installs in the backend and the UI only calls AgentHub's own commands. **Settings › General › Updates** shows the state, has **Check now** and a switch for the automatic checks.
 - **You decide:** a found version shows an **Update** chip in the title bar and a dot on the Settings button. The dialog shows the release notes (Markdown, no raw HTML) with **Later**, **Skip this version** and **Download**. Downloading doesn't restart anything and can be hidden while you work. When it's ready the chip says **Restart**.
 - **Restart safety:** the restart step lists what it would interrupt, with the same check as quitting (terminal sessions, chat turns, running Git operations and unsaved files), and offers **Save all and restart**. Only that confirmation runs the installer: it ends terminals and chat turns like Quit does, and on Windows the installer closes the app and starts the new version. Projects and layout are restored; interrupted turns are marked as such.
 - **Trust:** every update is verified against the public key in `tauri.conf.json`; a missing or wrong signature is refused. The signing key is kept outside the repository (back it up: without it installed copies can never update again).
-- **Releases:** GitHub Releases (`latest.json` plus the signed NSIS installer). One version in `package.json` (`pnpm version:set x.y.z` keeps the Cargo manifests and the sidecar package in step, `pnpm version:check` verifies). `.github/workflows/release.yml` builds a draft release from a `v*` tag; see [docs/RELEASING.md](docs/RELEASING.md). Not done yet: Windows code signing (installers are unsigned, so SmartScreen warns), and the `OWNER/REPO` address in the updater endpoint must be replaced once the repository exists.
+- **Releases:** GitHub Releases (`latest.json` plus the signed NSIS installer) of the repository named in `plugins.updater.endpoints` in `tauri.conf.json`. One version in `package.json` (`pnpm version:set x.y.z` keeps the Cargo manifests and the sidecar package in step, `pnpm version:check` verifies). `.github/workflows/release.yml` builds a draft release from a `v*` tag; see [docs/RELEASING.md](docs/RELEASING.md). Not done yet: Windows code signing (installers are unsigned, so SmartScreen warns).
 
 ## User experience
 
@@ -148,20 +149,20 @@ Installed copies find new versions by themselves and install them only when you 
 
 The application uses a **project-centric dashboard**, not a traditional VS Code-style IDE layout:
 
-1. **Title bar (40 px, custom):** AgentHub mark, global search (`Ctrl K`: chats, files, commands, projects), the OpenAI Codex usage meter, window controls.
+1. **Title bar (40 px, custom):** AgentHub mark, global search (`Ctrl K`: chats, files, commands, projects), the **Ask** button (chats without a project), an **Update** chip while an update is waiting, window controls.
 2. **Project rail (232 px, or 60 px collapsed):** the projects with their full names (initials only when collapsed with the »/« button; the choice is saved), an add-project button and Settings. **General** (chats without a project) is the button next to the title-bar search, with the same signals. An amber count shows conversations that need you (Approve, Interrupted, Error); a cyan dot means a chat is running; a green dot means a terminal is.
 3. **Workspace header (48 px):** name and path, view tabs **Overview · Chat · Code · Terminals** (General, titled **Ask**, has only Chat; the Chat tab carries the amber count), and the Chat focus button (`Ctrl Shift F` hides rail, list and panel).
 4. **Overview:** four lists with actions — Conversations, AI activity (needs approval / running / interrupted, with Review · Watch · Resume), Recently changed files (by agents) and Terminals. Design: "v2 · Project overview".
 5. **Chat:** conversation list (268 px; search, status chips, rename, delete), conversation header (title, mode, engine · model · policy, status, Changes toggle), transcript (max 760 px), composer (engine & model menu `Ctrl /`, Plan/Agent switch in projects, policy chip, `@` attachments and pasted images, Send/Stop), and the Changes / Activity panel (380 px, agent chats). See [Unified Chat](#4-unified-chat-coding-agents-and-direct-apis).
-6. **Editor view:** project-scoped explorer (modified and **AI** markers), Monaco editor with tabs, breadcrumbs, unsaved indicator, conflict banner and a status bar (line/column, language, encoding, line endings). Opening a file from anywhere switches here.
+6. **Editor view:** a sidebar that is either the project-scoped explorer (modified, **AI** and Git status markers) or **Source control**, and the Monaco editor with tabs, breadcrumbs, unsaved indicator, conflict banner and a status bar (branch and sync counts, line/column, language, encoding, line endings). Opening a file from anywhere switches here.
 7. **Terminals view:** shells and saved commands only — a draggable session list (inline rename) beside split terminal panes, plus terminal focus mode (numbered tabs, `Shift Esc` to exit).
 
 Overlays and secondary screens:
 
 - **Command palette (`Ctrl K`):** fuzzy search across Chats (all projects and General), Projects, Files (`@`), Sessions (`#`), and Commands (`>`, including *New Agent chat with …*); `Enter` opens, `Ctrl Enter` opens a terminal in focus mode. Switching projects never ends live sessions or chat turns.
 - **First run:** *Open existing folder* (`Ctrl O`) or *Create new folder* (`Ctrl Shift N`), plus **Connect AI**: the runtime probe and an *Add key* shortcut.
-- **Settings (`Ctrl ,`):** General, Appearance, AI integrations, Chat, Editor, Terminals & shells, Keyboard shortcuts.
-- **Dialogs:** Add project, New terminal menu, Unsaved changes, End running session, Remove project (its chats move to General), Quit with running sessions or chat turns, Delete conversation (file changes on disk are kept), Revert all changes — each states its consequence explicitly.
+- **Settings (`Ctrl ,`):** General (default shell, updates, usage thresholds), Appearance, AI integrations, Chat, Editor, Git, Terminals & shells, Keyboard shortcuts.
+- **Dialogs:** Add project, Unsaved changes, End running session, Remove project (its chats move to Ask), Quit with running work, Delete conversation (file changes on disk are kept), Revert all changes, Update available / Restart to update, custom saved command — each states its consequence explicitly.
 
 Panels can be resized or collapsed. The app should remember the selected view and basic layout for each project.
 
@@ -177,6 +178,7 @@ Default keyboard shortcuts (also listed in Settings › Keyboard shortcuts). The
 | Chat: new chat / engine & model / list / focus | `Ctrl N` / `Ctrl /` / `Ctrl B` / `Ctrl Shift F` (only in Chat) |
 | Chat: send / new line | `Enter` / `Shift Enter` (or `Ctrl Enter` / `Enter`, per Settings › Chat) |
 | Chat: stop the turn | `Esc` (only while focus is in Chat) |
+| Source control: commit / commit & push (in the message box) | `Ctrl Enter` / `Ctrl Shift Enter` |
 | New terminal (default shell) | ``Ctrl Shift ` `` |
 | Run saved command 1–9 | `Alt 1`–`Alt 9` |
 | Close active terminal (asks first if its process is running) | `Ctrl Shift W` |
@@ -266,9 +268,10 @@ Design guidelines:
 | Animation | **Motion for React** | UI transitions |
 | Client state | **Zustand** | Active project, views, transient UI state |
 | Code editor | **Monaco Editor** | Syntax-highlighted file editing |
+| Markdown | **react-markdown** + **remark-gfm** | Editor preview, chat answers, release notes (no raw HTML) |
 | Terminal renderer | **xterm.js** + `@xterm/addon-webgl` | Terminal display and keyboard input; the WebGL renderer (as in VS Code) draws block and box characters itself, falling back to the DOM renderer without WebGL |
 | Native backend | **Rust** | File system, sessions, process management |
-| Terminal processes | **PTY abstraction** | Windows ConPTY; Unix PTY on macOS/Linux |
+| Terminal processes | **portable-pty** | Windows ConPTY; Unix PTY on macOS/Linux later |
 | Local storage | **SQLite** | Registered projects, preferences, saved workspace metadata, chat history |
 | Direct APIs | **reqwest** (`native-tls`: SChannel on Windows) + `futures-util`, `tokio` | Streaming requests to the OpenAI, Anthropic and Gemini APIs |
 | Native agents (Rust) | stdio JSON-RPC (`chat/agents/jsonrpc.rs`), ACP core (`chat/agents/acp.rs`) | `codex app-server`, `gemini --acp`, `agy_acp_server` (Antigravity ACP server, proprietary, installed by the user from the ACP registry) |
@@ -279,24 +282,27 @@ Design guidelines:
 | Git | system **git** (Git for Windows ≥ 2.41) + **windows-sys** Job Objects | Source control: status, staging, commits, sync; git and its helpers end together on cancel |
 | Secrets | **keyring** 3 (`windows-native`; Keychain / Secret Service later) | Direct-API keys (and Claude Agent's Anthropic key) in the OS credential store |
 
-The Rust PTY implementation should be evaluated using an established crate such as `portable-pty`. Exact crates and plugins will be selected and validated during implementation.
+Prefer established, maintained dependencies and note any new one in this table.
 
 ## High-level architecture
 
 ```text
 ┌──────────────────────────────────────────────────────────────────┐
 │ Tauri window · React + TypeScript                                │
-│  ├─ Project rail, General button, palette, settings             │
+│  ├─ Project rail, Ask button, palette, settings, update chip     │
 │  ├─ Chat (own Zustand store): list · transcript · composer ·     │
 │  │   approvals · Changes panel                                   │
-│  ├─ Editor (Monaco models outside React) · explorer              │
+│  ├─ Editor (Monaco outside React) · Files / Source control       │
+│  │   (Source control has its own Zustand store)                  │
 │  └─ Terminals (xterm.js outside React)                           │
 └────────────────────────────┬─────────────────────────────────────┘
                              │ Tauri commands · events · Channels
 ┌────────────────────────────▼─────────────────────────────────────┐
 │ Rust backend                                                     │
-│  ├─ projects · filesystem (root-scoped) · watcher · SQLite       │
+│  ├─ projects · filesystem (root-scoped) · watchers · SQLite      │
 │  ├─ terminals: PTY manager (shells and saved commands)           │
+│  ├─ git ───────argv, no shell──────► system git (Job Object)     │
+│  ├─ updates ─────HTTPS───────► GitHub Releases (signed updates)  │
 │  └─ chat                                                         │
 │      ├─ service: one turn per conversation; direct APIs ─HTTPS─► │
 │      │            OpenAI · Anthropic · Gemini                    │
@@ -316,6 +322,8 @@ The Rust PTY implementation should be evaluated using an established crate such 
 **Processes:** Codex runs one long-lived app-server with a thread per conversation; Gemini runs one ACP process per conversation; the Node sidecar hosts the Claude and Copilot SDK sessions. Each is restarted after a crash on the next turn, and in-flight turns fail with "runtime exited" instead of hanging. All of them end when AgentHub quits.
 
 **Data flow (terminals):** terminal output and lifecycle updates arrive as events; the backend owns PTYs; the frontend renders.
+
+**Data flow (Git and updates):** the Git service runs the system `git` and returns a status snapshot with every operation; a watcher on the git directory emits `git-changed` so the sidebar also follows commits made in a terminal. The update service checks, downloads and installs from Rust; the UI only calls its commands and listens for `update-available`.
 
 ## Draft domain model
 
@@ -358,7 +366,7 @@ Conversation          # chat_conversations (migration v3)
   id
   project_id?         # null = General
   title               # from the first message; renamable
-  engine              # claude-code | codex | gemini-cli | copilot-cli | openai-api | anthropic-api | gemini-api
+  engine              # claude-code | codex | gemini-cli | antigravity | copilot-cli | openai-api | anthropic-api | gemini-api
   model
   mode                # ask | plan | agent
   policy              # ask | auto_edits | auto_all
@@ -385,7 +393,7 @@ EngineProbe           # cached detection result per runtime (no secrets)
 
 Migrations are versioned and each runs in one transaction with its `user_version` bump (a failure leaves the database unchanged). **v3** renames `provider` to `engine` (`openai`→`openai-api`, `anthropic`→`anthropic-api`), adds project, mode, policy, status and runtime-session columns (existing chats land in General), adds `chat_items` and `engine_probes`, turns built-in agent presets into engine path overrides (when you had customized the path) and deletes them; user-made presets stay as saved terminal commands. Removing a project moves its chats to General.
 
-Persist project registration, saved commands, preferences, restorable UI state, conversations and items to SQLite. **Live PTY handles, terminal buffers, runtime processes file checkpoints and pasted chat images are not in the database** (both are files in the app data folder: `checkpoints/` and `chat-images/<conversation>/`).
+Persist project registration, saved commands, preferences, restorable UI state, conversations and items to SQLite. Live PTY handles, terminal buffers and runtime processes are **not** in the database; file checkpoints and pasted chat images are files in the app data folder (`checkpoints/` and `chat-images/<conversation>/`). Preferences are JSON values in the `settings` key/value table (`editor`, `terminal`, `usage`, `chat`, `git`, `updates`, `ui`); keys owned by the backend (`engine_path:*`, `git_path`, `engines_disabled`, `updates_last_check`) can't be written from the UI. Git status and update state aren't stored: the repository and the release host are the source of truth.
 
 ## Repository structure
 
@@ -394,6 +402,8 @@ agenthub/
 ├── README.md
 ├── AGENTS.md                # shared instructions for AI coding agents
 ├── CLAUDE.md                # Claude Code entry point (imports AGENTS.md)
+├── GEMINI.md                # Gemini CLI entry point (imports AGENTS.md)
+├── opencode.jsonc           # OpenCode config (CodeGraph MCP server)
 ├── package.json             # pnpm scripts (dev, build, test, tauri); the one app version
 ├── scripts/set-version.mjs  # sets or checks the version in package.json, the sidecar and Cargo.toml
 ├── docs/RELEASING.md        # how to cut a release
@@ -424,8 +434,9 @@ agenthub/
     │   ├── filesystem/      # root-scoped file service
     │   ├── terminals/       # PTY session manager, shell detection
     │   ├── presets/         # saved terminal commands (v1 presets)
-    │   ├── chat/            # service, repository, policy, engines, checkpoints, secrets,
-    │   │                    # providers/{openai,anthropic,gemini}, agents/{turn,jsonrpc,codex,gemini,sidecar}
+    │   ├── chat/            # service, repository, policy, engines, checkpoints, images, secrets,
+    │   │                    # providers/{openai,anthropic,gemini},
+    │   │                    # agents/{turn,jsonrpc,codex,acp,gemini,antigravity,sidecar}
     │   ├── usage/           # Codex usage windows
     │   ├── updates/         # update check, download, install; the daily check
     │   ├── git/             # git runner, status, staging, commit, sync, git-dir watcher
@@ -436,7 +447,9 @@ agenthub/
 
 Terminal output reaches the frontend through the `terminal-output` and `terminal-status` events. Each `SessionInfo` carries a monotonic `version`, so the frontend keeps the newest snapshot when an event and a command reply arrive out of order. xterm.js instances live in `src/features/terminals/registry.ts`, outside React, so hiding a view never loses scrollback.
 
-## MVP milestones
+## Roadmap and history
+
+Phases 1–5 delivered the original scope (workspace, terminals, Chat) and stay here as history. Phases 6 and 7 and the unchecked items are the current work. Tick a box only when the item actually works.
 
 ### Phase 1 — Workspace foundation
 
@@ -491,7 +504,7 @@ In v1 agents ran as terminal presets. Phase 5 moved them into Chat; the items be
 - [x] Antigravity adapter (official ACP server) on the shared ACP core, with Google sign-in from Settings; tested against fake ACP peers only (see [Verification status](#verification-status)).
 - [x] Gemini CLI on Gemini API keys only (personal Google sign-in was retired by Google).
 - [x] Claude Agent and Copilot adapters in the Node sidecar, supervised from Rust.
-- [x] Workspace rail with General, Chat tab, v2 Overview, Codex usage in the title bar; terminals for shells and saved commands only.
+- [x] Workspace rail with General, Chat tab, v2 Overview; terminals for shells and saved commands only.
 - [x] Project chats are coding agents in Plan/Agent and General chats direct APIs in Ask; full-name project rail (collapsible), General in the title bar, usage readout in the composer for the chat's engine.
 - [ ] Live end-to-end runs of every runtime on this machine (see [Verification status](#verification-status)).
 - [ ] Chat compact layouts below 1200 px (panel overlay, list drawer) and the raw-log developer view.
@@ -507,8 +520,8 @@ In v1 agents ran as terminal presets. Phase 5 moved them into Chat; the items be
 ### Phase 7 — Automatic updates
 
 - [x] Version in one place (`pnpm version:set` / `version:check`), updater plugin with signed updates, `update_check` / `update_download` / `update_install` in Rust, a daily check, Settings › General › Updates, the title-bar chip and dialog with release notes, Skip this version, download progress, and a restart that lists and protects running work.
-- [x] Release pipeline written: `ci.yml`, `release.yml` and `docs/RELEASING.md` (not yet run: there is no repository).
-- [ ] Create the GitHub repository, set the real `OWNER/REPO` endpoint and the signing secrets, and run an end-to-end update between two tagged versions.
+- [x] Release pipeline: `ci.yml`, `release.yml` and `docs/RELEASING.md`; the GitHub repository exists and the updater endpoint points at its releases.
+- [ ] Confirm an end-to-end update between two published versions, including a refused bad signature, and record it under Verification status.
 - [ ] Windows code signing (Authenticode or Azure Trusted Signing).
 
 ### Later enhancements
@@ -528,7 +541,10 @@ Because AgentHub can edit local files and spawn arbitrary programs, these are fi
 - Do not store API keys or credentials in SQLite or logs. Direct-API keys (and Claude Agent's Anthropic key) live in the OS credential store, are read only in Rust and reach a runtime only through its process environment; the UI sees the last four characters. Gemini CLI gets the Gemini API key the same way. Codex, Copilot and Antigravity keep their own sign-in; AgentHub never reads their credential files.
 - Every agent permission request is checked by `chat::policy` (mode, approval policy, project root with `..` and symlinks resolved) before the runtime is answered; unknown operations are never auto-approved, approvals never outlive a runtime session, and a file is checkpointed before any write is allowed.
 - Direct APIs never get tools; files reach them only as explicit attachments read through the root-scoped file service.
-- **Pasted images.** `Ctrl V` in the composer attaches clipboard images in project and Ask chats (up to 4 per message, 5 MB each). AgentHub decides the type from the bytes (PNG, JPEG, GIF or WebP; anything else is refused), stores them in the app data folder, never in the project, and deletes them with the chat. Each runtime gets the bytes in its own protocol, so none reads a file outside the project: Claude Agent as image blocks, Codex as `image` inputs with a `data:` URL, Copilot as `blob` attachments, Gemini CLI and Antigravity as ACP `image` blocks only when the agent advertises `promptCapabilities.image` (otherwise the turn fails with a clear error). Direct APIs (Ask) get them as OpenAI `input_image`, Anthropic `image` and Gemini `inlineData` parts; Gemini takes no GIF. Because an API request resends the conversation, the 8 newest images of the history go with it and older ones become a one-line note. Regenerate sends them again. Model output is untrusted (no raw HTML, no remote images, only http(s) links, opened in the browser). AgentHub never runs a command it types into a terminal for you.
+- **Pasted images.** `Ctrl V` in the composer attaches clipboard images in project and Ask chats (up to 4 per message, 5 MB each). AgentHub decides the type from the bytes (PNG, JPEG, GIF or WebP; anything else is refused), stores them in the app data folder, never in the project, and deletes them with the chat. Each runtime gets the bytes in its own protocol, so none reads a file outside the project: Claude Agent as image blocks, Codex as `image` inputs with a `data:` URL, Copilot as `blob` attachments, Gemini CLI and Antigravity as ACP `image` blocks only when the agent advertises `promptCapabilities.image` (otherwise the turn fails with a clear error). Direct APIs (Ask) get them as OpenAI `input_image`, Anthropic `image` and Gemini `inlineData` parts; Gemini takes no GIF. Because an API request resends the conversation, the 8 newest images of the history go with it and older ones become a one-line note. Regenerate sends them again.
+- Model output is untrusted: no raw HTML, no remote images, only http(s) links, opened in the browser. AgentHub never runs a command it types into a terminal for you.
+- **Git.** The system `git` runs with argument lists (never a shell), `GIT_TERMINAL_PROMPT=0` and in a Windows Job Object; pushes are never forced; operations that rewrite files are refused while those files have unsaved editor changes; discards move the current file to the Recycle Bin first; Git credentials belong to Git Credential Manager (AgentHub stores none) and git output is redacted.
+- **Updates.** Check, download and install run in Rust (the webview's CSP is closed to remote origins); updates are verified against the public key in `tauri.conf.json`; nothing installs or restarts without the user's confirmation, with the same running-work check as quitting; the updater's private key never enters the repository.
 - Scope Tauri permissions/capabilities to the minimum needed for the UI.
 - Sanitize external links and treat terminal output and file content as untrusted input.
 - Handle binary files, large files, encoding errors, and external file changes gracefully.
@@ -545,6 +561,7 @@ Prerequisites (Windows):
 - Visual Studio Build Tools with the C++ workload.
 - WebView2 runtime (preinstalled on current Windows).
 - Node.js 20.19+ on `PATH` for the agent sidecar (Claude Agent, Copilot CLI).
+- Git for Windows 2.41+ for Source control (everything else works without it).
 - Optional agent runtimes: Claude Code (or the SDK's bundled copy), Codex CLI (or the Codex desktop app), Gemini CLI (with a Gemini API key), the Antigravity ACP server (download `antigravity-acp` for your system from the [ACP registry](https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json), unzip it, keep its files together, and add the folder to `PATH` or choose `agy_acp_server.exe` in Settings), Copilot CLI; and/or API keys for OpenAI, Anthropic, Gemini.
 
 Commands (run from the repo root). If `pnpm` isn't on your `PATH`, prefix each command with `corepack`, e.g. `corepack pnpm install`.
@@ -566,21 +583,26 @@ Commands (run from the repo root). If `pnpm` isn't on your `PATH`, prefix each c
 | Release app + installers (NSIS, MSI, signed update payload; needs `TAURI_SIGNING_PRIVATE_KEY`) | `pnpm tauri build` |
 | Set or check the app version everywhere | `pnpm version:set 0.2.0` / `pnpm version:check` |
 
-App data (SQLite database `agenthub.db`, and `checkpoints/` for agent edits) is stored in `%APPDATA%\com.agenthub.desktop`. Delete that folder to reset AgentHub; this never touches project files.
+CI (`.github/workflows/ci.yml`) runs the version check, typecheck, tests, `pnpm build`, `cargo test` and `cargo clippy -D warnings` on pull requests and on pushes to `master`. Releases follow [docs/RELEASING.md](docs/RELEASING.md).
+
+App data (SQLite database `agenthub.db`, `checkpoints/` for agent edits and `chat-images/` for pasted images) is stored in `%APPDATA%\com.agenthub.desktop`. Delete that folder to reset AgentHub; this never touches project files.
 
 ### Verification status
 
 - **Automated (CI-safe):** frontend unit/render tests (`pnpm test`), backend tests (`cargo test`): migrations against a v2 database, policy, checkpoints, the turn driver with a scripted adapter, direct APIs against a local mock HTTP server, and the Codex, ACP (Gemini CLI, Antigravity) and sidecar adapters against in-memory fake runtimes built from the protocol schemas. No test calls a paid API.
+- **Git (automated):** the `git` module runs the real `git` in temporary repositories with isolated config and a local bare origin: staging and discard (Recycle Bin mocked), commit with trailer and amend guard, a failing hook, push rejected then Pull & push, a pull that stops on conflicts then Continue and Abort, publish, and the git-dir watcher. Skipped when git is missing or older than 2.41.
+- **Updates (automated):** scheduling, settings and endpoint logic in Rust, and the update flows in the UI with the backend mocked.
 - **Checked live on the development machine:** probes only — Codex (app-server handshake, `account/read`, `model/list`), Claude Agent (Claude Code 2.1.311 found, models listed through the SDK) and Copilot (SDK-bundled runtime, signed in through the GitHub CLI login).
 - **Not yet run live:** real agent turns for any runtime (costs money; needs keys/sign-in), Gemini CLI and Copilot CLI (not installed on the development machine), and Antigravity (no live run of `agy_acp_server` yet: its mode ids, whether it sends every edit and command through `fs/*` and permission requests, and its sign-in are taken from its documentation and still to be confirmed; run `cargo test --manifest-path src-tauri/Cargo.toml antigravity::tests::live_probe -- --ignored --nocapture` with `AGENTHUB_ANTIGRAVITY` set to the program). Treat their behavior as protocol-correct but unproven until you run them.
+- **Not yet exercised:** downloading and installing a real release and the refusal of a bad signature (they need a published release); Git Credential Manager and SSH prompts against real remotes; and the sidecar isn't packaged, so installed builds can't run Claude Agent or Copilot.
 
 ### Working with AI coding agents
 
 Agent guidance for this repository lives in [`AGENTS.md`](AGENTS.md), which Codex CLI, OpenCode, and other AGENTS.md-aware tools read automatically. `CLAUDE.md` imports it for Claude Code. Update `AGENTS.md` when architecture rules, conventions, or commands change.
 
-## MVP acceptance criteria
+## Acceptance criteria
 
-The Windows MVP is ready when a user can:
+The Windows app does its job when a user can:
 
 1. Register at least two local project folders and switch between them.
 2. Browse, open, edit, and save a text/code file within each project.
@@ -591,8 +613,10 @@ The Windows MVP is ready when a user can:
 7. See accurate terminal status and structured agent status, and stop either intentionally.
 8. Restart AgentHub and recover projects, layout, conversations and their runtime sessions where the runtime supports it.
 9. Use the complete workflow with a consistent dark theme and keyboard navigation.
+10. Review what agents changed, then stage, commit and push it from Source control without leaving AgentHub.
+11. Receive an update, read what changed, and install it when it suits them, without losing running work unknowingly.
 
-## Non-goals for the MVP
+## Non-goals
 
 - Replacing VS Code, Rider, or other full IDEs. Git covers reviewing and sharing agent work (see Source control), not a full Git client.
 - Cloud synchronization or a hosted backend.

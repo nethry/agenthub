@@ -4,8 +4,8 @@ Installed copies check GitHub Releases for `latest.json` (at start and once a da
 
 ## One-time setup
 
-1. **Repository.** The project folder isn't a Git repository yet: `git init`, commit, create the GitHub repository and push `main`.
-2. **Release address.** In `src-tauri/tauri.conf.json` replace `OWNER/REPO` in `plugins.updater.endpoints` with your repository (`https://github.com/<owner>/<repo>/releases/latest/download/latest.json`). Until then the app says "Updates aren't set up yet".
+1. **Repository.** https://github.com/nethry/agenthub (remote `origin`, default branch `master`). CI runs on pull requests and on pushes to `master`.
+2. **Release address.** `plugins.updater.endpoints` in `src-tauri/tauri.conf.json` points at that repository's `releases/latest/download/latest.json`. If the repository ever moves, change it: installed copies keep checking the address they were built with.
 3. **Signing key.** The updater's key pair was generated with `pnpm tauri signer generate` and is in `%USERPROFILE%\.tauri\agenthub-updater.key` (private) and `.key.pub` (public; its contents are already `plugins.updater.pubkey`). It has **no password**: set one if you generate a new key.
    - On GitHub: repository → Settings → Secrets and variables → Actions → New repository secret. Add `TAURI_SIGNING_PRIVATE_KEY` (the **contents** of the `.key` file, not its path; or `gh secret set TAURI_SIGNING_PRIVATE_KEY < "$env:USERPROFILE\.tauri\agenthub-updater.key"`). Add `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` only if the key has a password: GitHub doesn't accept empty secrets, and a missing one reaches the workflow as an empty string, which is right for a key without a password.
    - **Back the private key up somewhere safe, outside the repository, and never commit it.** Without it you can't sign updates any more, and installed copies can never update again (they would need a manual reinstall with a new public key).
@@ -24,6 +24,6 @@ Never reuse or delete-and-recreate a version number that people may have install
 
 ## Notes
 
-- Tagging runs on `windows-latest`; the workflow can't be tested without the repository, so the first tag is the real test. Try it with a throwaway `v0.1.1-test` pre-release first.
-- Known gap: the installed app still can't run Claude Agent or Copilot because the sidecar's `node_modules` (about 450 MB) aren't bundled (see the README milestones). When that is fixed the installer, and so each full update, gets much larger.
+- The release workflow only runs on GitHub (`windows-latest`) and can't be tested locally. Try risky changes (workflow edits, updater changes) with a throwaway pre-release tag first.
+- Known gap: the installed app still can't run Claude Agent or Copilot because the sidecar's `node_modules` (about 450 MB) aren't bundled (see the README roadmap). When that is fixed the installer, and so each full update, gets much larger.
 - Updates are verified against the public key in `tauri.conf.json`; a payload with a missing or wrong signature is refused.

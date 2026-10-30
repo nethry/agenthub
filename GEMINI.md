@@ -1,3 +1,9 @@
+# GEMINI.md
+
+Guidance for Gemini CLI. All shared, tool-agnostic agent instructions live in `AGENTS.md`; edit that file, not this one, when project guidance changes.
+
+@AGENTS.md
+
 <!-- CODEGRAPH_START -->
 ## CodeGraph
 

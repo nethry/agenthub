@@ -121,12 +121,10 @@ function WorkspaceHeader({
   return (
     <div className="flex h-12 shrink-0 items-center gap-3.5 border-b border-line bg-[rgba(5,8,13,0.85)] pr-3.5 pl-5">
       <h1 className="glow-text m-0 max-w-[40%] shrink-0 truncate font-display text-[20px] font-bold tracking-[0.14em] uppercase">{name}</h1>
-      <span className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-muted" title={path}>
-        {path}
-      </span>
       {projectId && <BranchChip projectId={projectId} />}
 
-      <div role="tablist" aria-label="Workspace view" className="flex border border-line">
+      {/* The tabs sit right after the title and chip, so they never move when the controls on the right change. */}
+      <div role="tablist" aria-label="Workspace view" className="flex shrink-0 border border-line">
         {views.map((v, i) => {
           const selected = v.id === view;
           return (
@@ -151,6 +149,10 @@ function WorkspaceHeader({
           );
         })}
       </div>
+
+      <span className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-muted" title={path}>
+        {path}
+      </span>
 
       {projectId && view === "terminals" && (
         <div className="flex items-center gap-2">
