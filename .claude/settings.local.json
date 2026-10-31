@@ -6,5 +6,9 @@
       "Bash(node *)",
       "PowerShell(Get-Content *)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "codegraph"
+  ],
+  "enableAllProjectMcpServers": true
 }

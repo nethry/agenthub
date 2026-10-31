@@ -174,7 +174,7 @@ function SessionRow({
   );
 }
 
-function Pane({ session: s, active, wide }: { session: SessionInfo; active: boolean; wide: boolean }) {
+export function Pane({ session: s, active, wide = false, compact = false }: { session: SessionInfo; active: boolean; wide?: boolean; compact?: boolean }) {
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(s.title);
   const fontSize = useApp((st) => st.terminalPrefs.fontSize);
@@ -191,6 +191,7 @@ function Pane({ session: s, active, wide }: { session: SessionInfo; active: bool
       onMouseDown={() => !active && focusSession(s.id)}
       className={cn(
         "hud flex min-h-0 min-w-0 flex-col border bg-surface",
+        compact && "flex-1",
         active ? "border-accent/60 shadow-[0_0_22px_rgba(77,163,255,0.12)]" : "border-line",
       )}
     >
@@ -230,10 +231,11 @@ function Pane({ session: s, active, wide }: { session: SessionInfo; active: bool
             >
               {s.title}
             </span>
-            <span className="truncate font-mono text-[11px] text-muted">&gt; {s.commandLine}</span>
+            {!compact && <span className="truncate font-mono text-[11px] text-muted">&gt; {s.commandLine}</span>}
           </>
         )}
         <span className="flex-1" />
+        {compact && !renaming && <StatusChip session={s} variant="inline" />}
         <IconButton aria-label="Focus pane" onClick={() => set({ focusSessionId: s.id })}>
           <Maximize2 className="size-3.5" />
         </IconButton>

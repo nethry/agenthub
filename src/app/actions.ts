@@ -44,7 +44,7 @@ function parse<T>(raw: string | undefined, fallback: T): T {
 
 /** Fields that only make sense while the app runs (session ids die with it). */
 function persistable(ws: WorkspaceState) {
-  const { activeSessionId: _a, sessionOrder: _o, ...rest } = ws;
+  const { activeSessionId: _a, sessionOrder: _o, overviewSessionIds: _v, ...rest } = ws;
   return rest;
 }
 
@@ -76,7 +76,7 @@ export async function bootstrap() {
   await Promise.all(
     projects.map(async (p) => {
       const saved = (await ipc.getWorkspaceState(p.id).catch(() => null)) as Partial<WorkspaceState> | null;
-      workspaces[p.id] = { ...defaultWorkspace(), ...(saved ?? {}), activeSessionId: null, sessionOrder: [] };
+      workspaces[p.id] = { ...defaultWorkspace(), ...(saved ?? {}), activeSessionId: null, sessionOrder: [], overviewSessionIds: [] };
     }),
   );
 
@@ -256,8 +256,8 @@ async function spawn(req: Omit<SpawnRequest, "cols" | "rows">) {
     updateWorkspace(req.projectId, {
       activeSessionId: info.id,
       sessionOrder: [...ws.sessionOrder.filter((x) => get().sessions[x]), info.id],
-      // The Overview has no terminal, so show the new session where it can be used.
-      view: ws.view === "overview" ? "terminals" : ws.view,
+      // Overview hosts live terminals too. Reveal its dock without leaving instructions.
+      ...(ws.view === "overview" ? { overviewTerminalsCollapsed: false } : {}),
     });
     if (get().focusSessionId) set({ focusSessionId: info.id });
     terms.requestFocus(info.id);

@@ -284,6 +284,13 @@ export interface WorkspaceState {
   explorerWidth: number;
   /** Editor sidebar: the file tree or Source control. */
   sidebar: "files" | "scm";
+  /** Overview layout; terminal ids remain transient. */
+  overviewDocument: string | null;
+  overviewReadmeWidth: number;
+  overviewReadmeCollapsed: boolean;
+  overviewTerminalsCollapsed: boolean;
+  overviewSplit: boolean;
+  overviewSessionIds: string[];
 }
 
 export const defaultWorkspace = (): WorkspaceState => ({
@@ -297,6 +304,12 @@ export const defaultWorkspace = (): WorkspaceState => ({
   filesCollapsed: false,
   explorerWidth: 236,
   sidebar: "files",
+  overviewDocument: null,
+  overviewReadmeWidth: 55,
+  overviewReadmeCollapsed: false,
+  overviewTerminalsCollapsed: false,
+  overviewSplit: false,
+  overviewSessionIds: [],
 });
 
 export interface UiPrefs {
