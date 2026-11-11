@@ -26,6 +26,7 @@ use super::{
     redact, ChatError, ChatEvent, ChatMessage, Conversation, ConversationStatus, Decision, Engine, ErrorKind, Item, ItemBody, ItemStatus,
     MessageStatus, Mode, Policy, Provider, Role,
 };
+use crate::backlog::BacklogRef;
 use crate::error::{now_ms, AppError, AppResult};
 use crate::persistence::Db;
 
@@ -150,11 +151,13 @@ fn default_policy() -> Policy {
     Policy::Ask
 }
 
-/// A new user message: its text, attached project files and checked pasted images.
+/// A new user message: its text, attached project files, checked pasted
+/// images and the backlog item it is about.
 struct Input<'a> {
     content: &'a str,
     files: &'a [String],
     images: Vec<Checked>,
+    backlog: Option<&'a BacklogRef>,
 }
 
 /// Project chats use a coding agent in Plan or Agent mode; General chats a
@@ -630,6 +633,7 @@ impl ChatService {
         content: &str,
         attachments: &[String],
         new_images: &[NewImage],
+        backlog: Option<&BacklogRef>,
         sink: Sink,
     ) -> AppResult<String> {
         if content.trim().is_empty() {
@@ -644,7 +648,7 @@ impl ChatService {
             return Err(AppError::Invalid(format!("Attach up to {MAX_ATTACHMENTS} files per message.")));
         }
         let images = images::check(new_images)?;
-        self.start(conversation_id, Some(Input { content, files: attachments, images }), sink)
+        self.start(conversation_id, Some(Input { content, files: attachments, images, backlog }), sink)
     }
 
     /// Replaces the last answer (or a failed one) with a new one.
@@ -704,6 +708,17 @@ impl ChatService {
             }
             _ => vec![],
         };
+        // The backlog pack is built now, from the item as it is when sent.
+        let backlog = match input.as_ref().and_then(|i| i.backlog) {
+            Some(r) => {
+                let (item, text) = crate::backlog::context::for_item(&self.db, &r.item_id)?;
+                if conv.project_id.as_deref() != Some(item.project_id.as_str()) {
+                    return Err(AppError::Invalid("That backlog item belongs to another project.".into()));
+                }
+                Some((r.purpose, item, text))
+            }
+            None => None,
+        };
         let pasted: &[Checked] = input.as_ref().map_or(&[], |i| &i.images);
         if !pasted.is_empty() {
             if !engines::capabilities(conv.engine).images {
@@ -739,6 +754,9 @@ impl ChatService {
         let reply =
             repository::begin_reply(&self.db, conversation_id, input.as_ref().map(|i| i.content), conv.engine, &model).map_err(release)?;
         if let Some(user) = &reply.user_message {
+            let context = backlog.iter().map(|(_, item, text)| {
+                Ok(ItemBody::BacklogContext { item_id: item.id.clone(), label: format!("{} · {}", item.key(), item.title), text: text.clone() })
+            });
             let files = attached
                 .iter()
                 .map(|(path, text, truncated)| Ok(ItemBody::Attachment { path: path.clone(), text: text.clone(), truncated: *truncated }));
@@ -746,7 +764,7 @@ impl ChatService {
                 let id = self.images.store(conversation_id, img)?;
                 Ok(ItemBody::Image { id, name: img.name.clone(), mime: img.mime.to_string(), size: img.bytes.len() as u64 })
             });
-            for (i, body) in files.chain(pictures).enumerate() {
+            for (i, body) in context.chain(files).chain(pictures).enumerate() {
                 let item = Item {
                     id: uuid::Uuid::new_v4().to_string(),
                     message_id: user.id.clone(),
@@ -757,6 +775,9 @@ impl ChatService {
                     updated_at: now_ms(),
                 };
                 repository::upsert_item(&self.db, conversation_id, &item).map_err(release)?;
+            }
+            if let Some((purpose, item, _)) = &backlog {
+                crate::backlog::repository::add_link(&self.db, &item.id, conversation_id, *purpose).map_err(release)?;
             }
         }
         let user_message = match &reply.user_message {
@@ -1091,9 +1112,17 @@ pub fn read_attachments(root: &Path, files: &[String]) -> AppResult<Vec<(String,
     Ok(out)
 }
 
-/// A user message as the model sees it: attached files, then the text.
+/// A user message as the model sees it: the backlog context, attached files, then the text.
 pub fn user_turn_text(m: &ChatMessage) -> String {
     let mut out = String::new();
+    for item in &m.items {
+        if let ItemBody::BacklogContext { text, .. } = &item.body {
+            out.push_str(text);
+            out.push_str("
+
+");
+        }
+    }
     for item in &m.items {
         if let ItemBody::Attachment { path, text, truncated } = &item.body {
             out.push_str(&format!("<attached_file path=\"{path}\"{}>\n", if *truncated { " truncated=\"true\"" } else { "" }));
@@ -1432,7 +1461,7 @@ mod tests {
         let (url, req_rx) = serve(Reply::Raw(sse_response(body)));
         let (svc, conv) = setup(Provider::OpenAI, &url);
         let (sink, mut rx) = channel_sink();
-        let request_id = svc.send(&conv, "Say hello", &[], &[], sink).unwrap();
+        let request_id = svc.send(&conv, "Say hello", &[], &[], None, sink).unwrap();
         let (events, msg) = until_finished(&mut rx).await;
 
         match &events[0] {
@@ -1470,7 +1499,7 @@ mod tests {
         let (url, req_rx) = serve(Reply::Raw(sse_response(body)));
         let (svc, conv) = setup(Provider::Gemini, &url);
         let (sink, mut rx) = channel_sink();
-        svc.send(&conv, "Hello", &[], &[], sink).unwrap();
+        svc.send(&conv, "Hello", &[], &[], None, sink).unwrap();
         let (_, msg) = until_finished(&mut rx).await;
         assert_eq!(msg.content, "Hi there");
         assert_eq!(msg.status, MessageStatus::Complete);
@@ -1492,7 +1521,7 @@ mod tests {
         let (url, req_rx) = serve(Reply::Raw(sse_response(body)));
         let (svc, conv) = setup(Provider::Anthropic, &url);
         let (sink, mut rx) = channel_sink();
-        svc.send(&conv, "Hello", &[], &[], sink).unwrap();
+        svc.send(&conv, "Hello", &[], &[], None, sink).unwrap();
         let (_, msg) = until_finished(&mut rx).await;
         assert_eq!(msg.content, "Hi there");
         assert_eq!(msg.usage.unwrap(), Usage { input_tokens: Some(9), output_tokens: Some(2), cost_usd: None });
@@ -1507,7 +1536,7 @@ mod tests {
         let (url, _req) = serve(Reply::Raw(reply.into()));
         let (svc, conv) = setup(Provider::OpenAI, &url);
         let (sink, mut rx) = channel_sink();
-        svc.send(&conv, "Hi", &[], &[], sink).unwrap();
+        svc.send(&conv, "Hi", &[], &[], None, sink).unwrap();
         let (events, msg) = until_finished(&mut rx).await;
         assert_eq!(msg.status, MessageStatus::Error);
         let err = msg.error.unwrap();
@@ -1527,7 +1556,7 @@ mod tests {
         let (url, _req) = serve(Reply::Stall(first));
         let (svc, conv) = setup(Provider::OpenAI, &url);
         let (sink, mut rx) = channel_sink();
-        let request_id = svc.send(&conv, "Long answer please", &[], &[], sink).unwrap();
+        let request_id = svc.send(&conv, "Long answer please", &[], &[], None, sink).unwrap();
         loop {
             match tokio::time::timeout(Duration::from_secs(10), rx.recv()).await.unwrap().unwrap() {
                 ChatEvent::Delta { .. } => break,
@@ -1535,7 +1564,7 @@ mod tests {
             }
         }
         assert!(svc.is_busy(&conv));
-        assert!(svc.send(&conv, "again", &[], &[], channel_sink().0).is_err(), "one turn at a time");
+        assert!(svc.send(&conv, "again", &[], &[], None, channel_sink().0).is_err(), "one turn at a time");
         let started = Instant::now();
         assert!(svc.stop(&request_id));
         let (_, msg) = until_finished(&mut rx).await;
@@ -1560,12 +1589,12 @@ mod tests {
         let (svc, conv) = setup(Provider::OpenAI, &url);
         // A fake image is refused before anything is stored.
         let fake = NewImage { name: "fake.png".into(), data: "PHN2Zz4=".into() };
-        let err = svc.send(&conv, "What's this?", &[], &[fake], channel_sink().0).unwrap_err().to_string();
+        let err = svc.send(&conv, "What's this?", &[], &[fake], None, channel_sink().0).unwrap_err().to_string();
         assert!(err.contains("isn't a PNG"), "{err}");
         assert!(repository::messages(&svc.db, &conv).unwrap().is_empty(), "nothing stored");
 
         let (sink, mut rx) = channel_sink();
-        svc.send(&conv, "What's this?", &[], &[new_image("shot", PNG)], sink).unwrap();
+        svc.send(&conv, "What's this?", &[], &[new_image("shot", PNG)], None, sink).unwrap();
         let (_, msg) = until_finished(&mut rx).await;
         assert_eq!(msg.content, "A chart.");
         let raw = req_rx.recv().unwrap();
@@ -1578,7 +1607,7 @@ mod tests {
     #[test]
     fn gemini_refuses_gif_at_send() {
         let (svc, conv) = setup(Provider::Gemini, "http://127.0.0.1:9");
-        let err = svc.send(&conv, "What's this?", &[], &[new_image("anim", b"GIF89a\0\0")], channel_sink().0).unwrap_err().to_string();
+        let err = svc.send(&conv, "What's this?", &[], &[new_image("anim", b"GIF89a\0\0")], None, channel_sink().0).unwrap_err().to_string();
         assert!(err.contains("doesn't take GIF images"), "{err}");
     }
 
@@ -1616,7 +1645,7 @@ mod tests {
         let (url, _req) = serve(Reply::Stall(first));
         let (svc, conv) = setup(Provider::OpenAI, &url);
         let (sink, mut rx) = channel_sink();
-        let request_id = svc.send(&conv, "Long answer please", &[], &[], sink).unwrap();
+        let request_id = svc.send(&conv, "Long answer please", &[], &[], None, sink).unwrap();
         loop {
             if let ChatEvent::Delta { .. } = tokio::time::timeout(Duration::from_secs(10), rx.recv()).await.unwrap().unwrap() {
                 break;
@@ -1631,7 +1660,7 @@ mod tests {
         svc.set_enabled(Engine::OpenAiApi, false).unwrap();
         let info = svc.engines().into_iter().find(|e| e.engine == Engine::OpenAiApi).unwrap();
         assert!(!info.enabled);
-        let err = svc.send(&conv, "again", &[], &[], channel_sink().0).unwrap_err().to_string();
+        let err = svc.send(&conv, "again", &[], &[], None, channel_sink().0).unwrap_err().to_string();
         assert!(err.contains("turned off"), "{err}");
         let new = NewChat {
             project_id: None,
@@ -1658,7 +1687,7 @@ mod tests {
         let (url, _req) = serve(Reply::Raw(sse_response(body)));
         let (svc, conv) = setup(Provider::OpenAI, &url);
         let (sink, mut rx) = channel_sink();
-        svc.send(&conv, "Hi", &[], &[], sink).unwrap();
+        svc.send(&conv, "Hi", &[], &[], None, sink).unwrap();
         let (_, msg) = until_finished(&mut rx).await;
         assert_eq!(msg.status, MessageStatus::Error);
         assert_eq!(msg.content, "Half");
@@ -1704,9 +1733,61 @@ mod tests {
                 first_message: "T".into(),
             })
             .unwrap();
-        let err = svc.send(&conv.id, "Hi", &[], &[], channel_sink().0).unwrap_err();
+        let err = svc.send(&conv.id, "Hi", &[], &[], None, channel_sink().0).unwrap_err();
         assert_eq!(err.kind(), "missing_key");
         assert!(repository::messages(&db, &conv.id).unwrap().is_empty(), "nothing stored");
+    }
+
+    #[tokio::test]
+    async fn a_backlog_item_goes_with_the_message_as_context_and_links_the_chat() {
+        use crate::backlog::{self, BacklogRef, Kind, NewItem, Priority, Purpose};
+        let db = Arc::new(Db::open_in_memory().unwrap());
+        let dir = tempfile::tempdir().unwrap();
+        let (a, b) = (dir.path().join("a"), dir.path().join("b"));
+        std::fs::create_dir_all(&a).unwrap();
+        std::fs::create_dir_all(&b).unwrap();
+        let pa = crate::projects::add(&db, &a.to_string_lossy(), Some("A")).unwrap();
+        let pb = crate::projects::add(&db, &b.to_string_lossy(), Some("B")).unwrap();
+        let item = |project: &str, kind, title: &str| {
+            backlog::repository::create(&db, NewItem { project_id: project.into(), kind, title: title.into(), body: "Details".into(), priority: Priority::Normal })
+                .unwrap()
+        };
+        let feat = item(&pa.id, Kind::Feature, "Dark mode");
+        item(&pa.id, Kind::Bug, "Crash on save");
+        let elsewhere = item(&pb.id, Kind::Bug, "Other project");
+        let svc = Arc::new(service(&db, MemoryStore::default()));
+        let conv = svc
+            .create_conversation(NewChat {
+                project_id: Some(pa.id.clone()),
+                engine: Engine::Codex,
+                model: "m".into(),
+                mode: Mode::Plan,
+                policy: Policy::Ask,
+                first_message: "Plan".into(),
+            })
+            .unwrap();
+
+        let wrong = BacklogRef { item_id: elsewhere.id.clone(), purpose: Purpose::Plan };
+        let err = svc.send(&conv.id, "Plan it", &[], &[], Some(&wrong), channel_sink().0).unwrap_err().to_string();
+        assert!(err.contains("another project"), "{err}");
+        assert!(repository::messages(&db, &conv.id).unwrap().is_empty(), "nothing stored");
+
+        // No adapter in this build: the turn fails, but the message and link are stored.
+        let r = BacklogRef { item_id: feat.id.clone(), purpose: Purpose::Plan };
+        svc.send(&conv.id, "Plan it", &[], &[], Some(&r), channel_sink().0).unwrap();
+        let user = repository::messages(&db, &conv.id).unwrap().into_iter().find(|m| m.role == Role::User).unwrap();
+        match &user.items[0].body {
+            ItemBody::BacklogContext { item_id, label, text } => {
+                assert_eq!(item_id, &feat.id);
+                assert_eq!(label, "FEAT-1 · Dark mode");
+                assert!(text.contains("- BUG-2 [Reported · Normal] Crash on save"), "{text}");
+            }
+            other => panic!("{other:?}"),
+        }
+        let prompt = user_turn_text(&user);
+        assert!(prompt.starts_with("<backlog_context project=\"A\">") && prompt.ends_with("</backlog_context>\n\nPlan it"), "{prompt}");
+        let links = backlog::repository::get(&db, &feat.id).unwrap().links;
+        assert_eq!((links.len(), links[0].conversation_id.as_str(), links[0].purpose), (1, conv.id.as_str(), Purpose::Plan));
     }
 
     #[tokio::test]
@@ -1730,7 +1811,7 @@ mod tests {
                 first_message: "T".into(),
             })
             .unwrap();
-        let err = svc.send(&conv.id, "Hi", &[], &[], channel_sink().0).unwrap_err();
+        let err = svc.send(&conv.id, "Hi", &[], &[], None, channel_sink().0).unwrap_err();
         assert_eq!(err.kind(), "missing_key");
         assert!(err.to_string().contains("Antigravity"), "{err}");
         assert!(repository::messages(&db, &conv.id).unwrap().is_empty(), "nothing stored");

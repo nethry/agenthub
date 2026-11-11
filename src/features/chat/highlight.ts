@@ -69,7 +69,14 @@ export function languageBadge(tag: string): string {
 
 const cache = new Map<string, string>();
 const CACHE_LIMIT = 300;
-let themed = false;
+
+/**
+ * Drops cached markup: Monaco's token classes index into the active theme's
+ * colour map, so HTML colorized under another theme would show wrong colours.
+ */
+export function clearHighlightCache() {
+  cache.clear();
+}
 
 /**
  * Highlighted HTML for a code block, or null when the language is unknown.
@@ -83,12 +90,7 @@ export async function highlight(code: string, tag: string): Promise<string | nul
   const key = `${id}\u0000${code}`;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
-  if (!themed) {
-    // Token colors come from the active theme; make sure it's ours even if
-    // no editor was opened yet.
-    monaco.editor.setTheme("midnight-hud");
-    themed = true;
-  }
+  // Token colours come from the active theme, which app/appearance.ts sets at startup.
   const html = await monaco.editor.colorize(code, id, { tabSize: 2 });
   if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value as string);
   cache.set(key, html);

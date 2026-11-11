@@ -19,7 +19,7 @@ export function changesOf(messages: ChatMessage[]): ChatItem[] {
 }
 
 /** Right panel for agent chats: Changes (diffs, keep/revert) and Activity. */
-export function ChangesPanel({ conv }: { conv: Conversation }) {
+export function ChangesPanel({ conv, width = 380 }: { conv: Conversation; width?: number }) {
   const panel = useChat((s) => s.panel);
   const messages = useChat((s) => s.messages[conv.id] ?? EMPTY);
   const running = useChat((s) => !!s.requests[conv.id]);
@@ -35,7 +35,7 @@ export function ChangesPanel({ conv }: { conv: Conversation }) {
       onClick={() => setChat((s) => ({ panel: { ...s.panel, tab: id } }))}
       className={cn(
         "border-0 bg-transparent px-4 font-display text-[12.5px] font-bold tracking-[0.14em] uppercase",
-        panel.tab === id ? "text-accent shadow-[inset_0_-2px_0_#4DA3FF]" : "text-muted hover:text-fg",
+        panel.tab === id ? "text-accent shadow-[inset_0_-2px_0_var(--color-accent)]" : "text-muted hover:text-fg",
       )}
     >
       {label}
@@ -43,7 +43,7 @@ export function ChangesPanel({ conv }: { conv: Conversation }) {
   );
 
   return (
-    <aside aria-label="Changes and activity" className="rise flex w-[380px] shrink-0 flex-col border-l border-line bg-surface">
+    <aside aria-label="Changes and activity" style={{ width }} className="rise flex min-w-0 shrink-0 flex-col border-l border-line bg-surface">
       <div role="tablist" aria-label="Panel" className="flex h-[46px] shrink-0 items-stretch border-b border-line">
         {tab("changes", `Changes${files.length ? ` · ${files.length}` : ""}`)}
         {tab("activity", "Activity")}
@@ -65,7 +65,7 @@ export function ChangesPanel({ conv }: { conv: Conversation }) {
                   onClick={() => openChange(f.id)}
                   className={cn(
                     "flex items-center gap-2 border-0 px-3.5 py-[7px] text-left text-[12.5px]",
-                    sel ? "bg-accent/10 shadow-[inset_2px_0_0_#4DA3FF]" : "bg-transparent hover:bg-accent/5",
+                    sel ? "bg-accent/10 shadow-[inset_2px_0_0_var(--color-accent)]" : "bg-transparent hover:bg-accent/5",
                   )}
                 >
                   <span className="flex min-w-0 flex-1 flex-col gap-px">
@@ -169,8 +169,8 @@ function DiffView({ item, conv }: { item: ChatItem; conv: Conversation }) {
               className={cn(
                 "px-3.5",
                 l.tag === "@" && "bg-plan/[0.06] text-plan",
-                l.tag === "+" && "bg-run/[0.08] text-[#C9F7DE]",
-                l.tag === "-" && "bg-danger/[0.08] text-[#FFC2CC]",
+                l.tag === "+" && "bg-run/[0.08] text-diff-add-fg",
+                l.tag === "-" && "bg-danger/[0.08] text-diff-del-fg",
                 l.tag === " " && "text-muted",
               )}
             >

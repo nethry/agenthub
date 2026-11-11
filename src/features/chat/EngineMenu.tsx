@@ -79,7 +79,7 @@ export function EngineMenu({ projectId }: { projectId: string | null }) {
         onClick={() => setFocusEngine(e)}
         className={cn(
           "flex items-center gap-2.5 border-0 px-2 py-[7px] text-left transition-colors duration-150",
-          selected ? "bg-accent/10 shadow-[inset_0_0_0_1px_rgba(77,163,255,0.45)]" : "bg-transparent hover:bg-accent/5",
+          selected ? "bg-accent/10 hud:shadow-[inset_0_0_0_1px_rgba(77,163,255,0.45)]" : "bg-transparent hover:bg-accent/5",
         )}
       >
         <span className={cn("size-1.5 shrink-0", isAgent(e) ? "bg-agent" : "bg-accent")} />
@@ -111,7 +111,7 @@ export function EngineMenu({ projectId }: { projectId: string | null }) {
           title="Engine and model (Ctrl /)"
           className={cn(
             "flex h-7 max-w-[300px] items-center gap-2 border pr-2 pl-2.5 text-[12px] transition-colors duration-200",
-            open ? "border-accent bg-accent/12 shadow-[0_0_10px_rgba(77,163,255,0.25)]" : "border-line bg-accent/[0.06] hover:border-line-strong",
+            open ? "border-accent bg-accent/12 hud:shadow-[0_0_10px_rgba(77,163,255,0.25)]" : "border-line bg-accent/[0.06] hover:border-line-strong",
           )}
         >
           <span className={cn("size-1.5 shrink-0", isAgent(cfg.engine) ? "bg-agent" : "bg-accent")} />
@@ -127,7 +127,7 @@ export function EngineMenu({ projectId }: { projectId: string | null }) {
           sideOffset={8}
           collisionPadding={12}
           aria-label="Choose engine and model"
-          className="hud z-50 w-[420px] border border-accent/45 bg-[rgba(10,17,26,0.98)] shadow-[0_0_40px_rgba(77,163,255,0.14),0_18px_48px_rgba(0,0,0,0.6)] outline-none data-[state=open]:animate-[menu-in_160ms_ease-out]"
+          className="hud z-50 w-[420px] border border-accent/45 bg-overlay/98 hud:shadow-[0_0_40px_rgba(77,163,255,0.14),0_18px_48px_rgba(0,0,0,0.6)] graphite:shadow-(--shadow-pop) outline-none data-[state=open]:animate-[menu-in_160ms_ease-out]"
         >
           <div className="flex items-center px-3 pt-2.5 pb-1">
             <span className="label-caps text-[11.5px] text-muted">{inProject ? "Coding agents · local" : "Direct API"}</span>

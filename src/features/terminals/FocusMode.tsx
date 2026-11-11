@@ -28,7 +28,7 @@ export function FocusMode({ sessionId }: { sessionId: string }) {
         </span>
         <span className="font-display text-[13px] font-semibold tracking-[0.14em] text-muted uppercase">{project.name}</span>
         <span className="font-mono text-accent">//</span>
-        <span className="max-w-[240px] truncate font-display text-[15px] font-bold tracking-[0.14em] uppercase [text-shadow:0_0_12px_rgba(77,163,255,0.5)]">
+        <span className="max-w-[240px] truncate font-display text-[15px] font-bold tracking-[0.14em] uppercase hud:[text-shadow:0_0_12px_rgba(77,163,255,0.5)]">
           {session.title}
         </span>
         <StatusChip
@@ -55,7 +55,7 @@ export function FocusMode({ sessionId }: { sessionId: string }) {
                     "flex h-7 shrink-0 items-center gap-1.5 border-0 px-3 text-[12px]",
                     i > 0 && "border-l border-line",
                     selected
-                      ? "bg-accent/12 font-semibold text-accent shadow-[inset_0_-2px_0_#4DA3FF]"
+                      ? "bg-accent/12 font-semibold text-accent shadow-[inset_0_-2px_0_var(--color-accent)]"
                       : "bg-transparent text-muted hover:text-fg",
                   )}
                 >

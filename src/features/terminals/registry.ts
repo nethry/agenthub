@@ -1,6 +1,6 @@
 // xterm.js instances live here, outside React, so switching projects or views
 // never loses scrollback. React components only attach/detach the DOM node.
-import { Terminal, type ITheme } from "@xterm/xterm";
+import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { WebglAddon } from "@xterm/addon-webgl";
@@ -9,30 +9,7 @@ import "@xterm/xterm/css/xterm.css";
 import { ipc } from "@/lib/ipc";
 import { safeExternalUrl } from "@/lib/utils";
 import { get } from "@/app/store";
-
-export const TERMINAL_THEME: ITheme = {
-  background: "#03060A",
-  foreground: "#BCD0E6",
-  cursor: "#4DA3FF",
-  cursorAccent: "#03060A",
-  selectionBackground: "rgba(77, 163, 255, 0.32)",
-  black: "#0A111A",
-  red: "#FF5470",
-  green: "#3DF5A0",
-  yellow: "#FFB547",
-  blue: "#4DA3FF",
-  magenta: "#B79CFF",
-  cyan: "#5CD6F0",
-  white: "#BCD0E6",
-  brightBlack: "#4C627A",
-  brightRed: "#FF9AAB",
-  brightGreen: "#7CF5B8",
-  brightYellow: "#FFD08A",
-  brightBlue: "#A8D1FF",
-  brightMagenta: "#D4C4FF",
-  brightCyan: "#A6EEFA",
-  brightWhite: "#DCEBFF",
-};
+import { TERMINAL_THEMES } from "@/app/themePalettes";
 
 interface Entry {
   term: Terminal;
@@ -77,7 +54,7 @@ function create(id: string): Entry {
     cursorBlink: true,
     cursorStyle: "block",
     allowTransparency: true,
-    theme: TERMINAL_THEME,
+    theme: TERMINAL_THEMES[get().themeKey],
     // ConPTY repaints with its own resize semantics; without this, growing a
     // pane pulls scrollback into view and the next repaint lands misaligned.
     windowsPty: windowsPty(),
@@ -102,6 +79,8 @@ function create(id: string): Entry {
       if (sel) void navigator.clipboard.writeText(sel);
     };
     const paste = () => {
+      // Returning false only stops xterm's key handler, not the browser's paste.
+      e.preventDefault();
       void navigator.clipboard.readText().then((t) => t && term.paste(t));
     };
     if (e.ctrlKey && e.shiftKey && k === "c") {
@@ -234,6 +213,15 @@ export function applyPrefs() {
     e.term.options.scrollback = prefs.scrollback;
     e.term.options.fontSize = prefs.fontSize;
     fit(id);
+  }
+}
+
+/** Recolors every terminal for the current theme (output and scrollback stay). */
+export function applyTheme() {
+  const theme = TERMINAL_THEMES[get().themeKey];
+  for (const e of entries.values()) {
+    e.term.options.theme = theme;
+    if (e.opened) e.term.clearTextureAtlas();
   }
 }
 

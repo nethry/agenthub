@@ -71,7 +71,7 @@ export function PresetsSection() {
                 className={cn(
                   "flex items-center gap-3 px-3.5 py-3",
                   i > 0 && "border-t border-line",
-                  on && "bg-accent/8 shadow-[inset_0_0_0_1px_rgba(77,163,255,0.45)]",
+                  on && "bg-accent/8 hud:shadow-[inset_0_0_0_1px_rgba(77,163,255,0.45)]",
                 )}
               >
                 <button

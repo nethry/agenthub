@@ -477,6 +477,9 @@ pub enum ItemBody {
     /// An image the user pasted into their message. `id` names the file in
     /// AgentHub's app data folder (`chat::images`); the bytes aren't in SQLite.
     Image { id: String, name: String, mime: String, size: u64 },
+    /// The backlog item a message is about, as the agent got it
+    /// (`backlog::context`): `label` is "FEAT-12 · Title" for the chip.
+    BacklogContext { item_id: String, label: String, text: String },
 }
 
 impl ItemBody {
@@ -484,6 +487,7 @@ impl ItemBody {
         match self {
             ItemBody::Attachment { .. } => "attachment",
             ItemBody::Image { .. } => "image",
+            ItemBody::BacklogContext { .. } => "backlog_context",
             ItemBody::Text { .. } => "text",
             ItemBody::Thinking { .. } => "thinking",
             ItemBody::Tool { .. } => "tool",

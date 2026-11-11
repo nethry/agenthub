@@ -4,17 +4,17 @@ import * as CM from "@radix-ui/react-context-menu";
 import { cn } from "@/lib/utils";
 
 const contentCls =
-  "hud z-50 flex flex-col border border-accent/40 bg-[rgba(10,17,26,0.97)] p-1.5 shadow-[0_0_40px_rgba(77,163,255,0.12),0_16px_48px_rgba(0,0,0,0.5)] outline-none data-[state=open]:animate-[menu-in_180ms_ease-out]";
+  "hud z-50 flex flex-col rounded-card border border-accent/40 bg-overlay/97 p-1.5 graphite:border-line-strong graphite:bg-overlay hud:shadow-[0_0_40px_rgba(77,163,255,0.12),0_16px_48px_rgba(0,0,0,0.5)] graphite:shadow-(--shadow-pop) outline-none data-[state=open]:animate-[menu-in_180ms_ease-out]";
 
 const itemCls = (danger?: boolean) =>
   cn(
-    "flex h-8 cursor-pointer items-center gap-2.5 px-2 text-left outline-none select-none",
-    "data-[highlighted]:bg-accent/12 data-[highlighted]:shadow-[inset_0_0_0_1px_rgba(77,163,255,0.45)]",
+    "flex h-8 cursor-pointer items-center gap-2.5 rounded-chip px-2 text-left outline-none select-none",
+    "data-[highlighted]:bg-accent/12 graphite:data-[highlighted]:bg-hover hud:data-[highlighted]:shadow-[inset_0_0_0_1px_rgba(77,163,255,0.45)]",
     "data-[disabled]:cursor-default data-[disabled]:text-muted",
     danger && "text-danger-soft",
   );
 
-const labelCls = "px-2 pt-1.5 pb-1 font-display text-[12px] font-semibold tracking-[0.16em] text-muted uppercase";
+const labelCls = "px-2 pt-1.5 pb-1 font-display text-[12px] font-semibold tracking-[0.16em] text-muted uppercase graphite:font-medium";
 const separatorCls = "mx-1 my-1.5 h-px bg-line";
 
 interface ItemProps {
@@ -29,7 +29,7 @@ interface ItemProps {
 function ItemBody({ icon, children, hint, disabled, danger }: Omit<ItemProps, "onSelect">) {
   return (
     <>
-      {icon && <span className={cn("flex text-accent", disabled && "text-muted", danger && "text-danger-soft")}>{icon}</span>}
+      {icon && <span className={cn("flex text-accent graphite:text-muted", disabled && "text-muted", danger && "text-danger-soft")}>{icon}</span>}
       <span className="flex-1 truncate">{children}</span>
       {hint && <span className="font-mono text-[10.5px] text-muted">{hint}</span>}
     </>

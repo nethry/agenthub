@@ -3,10 +3,12 @@ import * as RD from "@radix-ui/react-dialog";
 import { motion } from "motion/react";
 import {
   Bot,
+  Bug,
   File,
   FolderOpen,
   FolderPlus,
   LayoutDashboard,
+  Lightbulb,
   Maximize2,
   MessageSquare,
   KeyRound,
@@ -32,6 +34,7 @@ import { get, isLive, set, setView, useApp, type PaletteMode } from "@/app/store
 import { basename, cn, dirname, fuzzyMatch, initials, pad2, relativeAgo } from "@/lib/utils";
 import { badgeTextClass } from "@/features/projects/ProjectBadge";
 import { indexFor } from "./fileIndex";
+import { startCreate } from "@/features/backlog/actions";
 import { chooseEngine, newChat, openConversation } from "@/features/chat/actions";
 import { AGENT_ENGINES, defaultModelFor, ENGINE_LABEL, engineOn, MODE_META, statusChip, visibleConversations } from "@/features/chat/models";
 import { useChat } from "@/features/chat/store";
@@ -71,7 +74,7 @@ function Highlight({ text, indices }: { text: string; indices: number[] }) {
     <>
       {[...text].map((ch, i) =>
         set_.has(i) ? (
-          <span key={i} className="text-accent [text-shadow:0_0_8px_rgba(77,163,255,0.6)]">
+          <span key={i} className="text-accent hud:[text-shadow:0_0_8px_rgba(77,163,255,0.6)]">
             {ch}
           </span>
         ) : (
@@ -174,7 +177,7 @@ function PaletteInner({ initialMode }: { initialMode: PaletteMode }) {
           ),
           right: running ? (
             <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-run">
-              <span className="size-[5px] bg-run shadow-[0_0_6px_#3DF5A0]" />
+              <span className="size-[5px] bg-run hud:shadow-[0_0_6px_#3DF5A0]" />
               {pad2(running)} RUNNING
             </span>
           ) : p.lastOpenedAt ? (
@@ -259,7 +262,7 @@ function PaletteInner({ initialMode }: { initialMode: PaletteMode }) {
         });
       }
       if (active) {
-        for (const view of ["overview", "chat", "editor", "terminals"] as const) {
+        for (const view of ["overview", "chat", "backlog", "editor", "terminals"] as const) {
           add({
             id: `c:view:${view}`,
             group: "Commands",
@@ -271,6 +274,26 @@ function PaletteInner({ initialMode }: { initialMode: PaletteMode }) {
             },
           });
         }
+        add({
+          id: "c:feature",
+          group: "Commands",
+          title: `New feature in ${active.name}'s backlog`,
+          icon: <Lightbulb className="size-4" />,
+          run: () => {
+            set({ screen: "workspace" });
+            startCreate(active.id, "feature");
+          },
+        });
+        add({
+          id: "c:bug",
+          group: "Commands",
+          title: `Report a bug in ${active.name}'s backlog`,
+          icon: <Bug className="size-4" />,
+          run: () => {
+            set({ screen: "workspace" });
+            startCreate(active.id, "bug");
+          },
+        });
         add({
           id: "c:remove",
           group: "Commands",
@@ -370,7 +393,7 @@ function PaletteInner({ initialMode }: { initialMode: PaletteMode }) {
       <RD.Portal>
         <RD.Overlay asChild>
           <motion.div
-            className="fixed inset-0 z-40 bg-[rgba(2,5,9,0.72)] backdrop-blur-[4px]"
+            className="fixed inset-0 z-40 bg-scrim backdrop-blur-[4px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.18 }}
@@ -382,7 +405,7 @@ function PaletteInner({ initialMode }: { initialMode: PaletteMode }) {
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, ease: [0.2, 0.7, 0.2, 1] }}
-            className="hud border border-accent/45 bg-[rgba(10,17,26,0.96)] shadow-[0_0_60px_rgba(77,163,255,0.16),0_24px_64px_rgba(0,0,0,0.6)] [--hud-size:14px] [--hud-weight:2px]"
+            className="hud border border-accent/45 bg-overlay/96 hud:shadow-[0_0_60px_rgba(77,163,255,0.16),0_24px_64px_rgba(0,0,0,0.6)] graphite:shadow-(--shadow-pop) [--hud-size:14px] [--hud-weight:2px]"
           >
             <div className="flex h-[26px] items-center justify-between border-b border-line px-3.5 font-mono text-[10.5px] text-muted">
               <span>
@@ -466,7 +489,7 @@ function PaletteInner({ initialMode }: { initialMode: PaletteMode }) {
                       onClick={(e) => run(i, e.ctrlKey)}
                       className={cn(
                         "flex cursor-pointer items-center gap-3 p-2",
-                        selected && "bg-accent/10 shadow-[inset_0_0_0_1px_rgba(77,163,255,0.45)]",
+                        selected && "bg-accent/10 hud:shadow-[inset_0_0_0_1px_rgba(77,163,255,0.45)]",
                       )}
                     >
                       {it.group === "Projects" ? (

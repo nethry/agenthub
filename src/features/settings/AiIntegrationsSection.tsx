@@ -298,7 +298,7 @@ function StateChip({ status }: { status: ProviderStatus | undefined }) {
   if (!status?.hasKey) return <span className={cn(base, "border-line-strong text-muted")}><span className="size-[5px] border border-muted" />NO KEY</span>;
   switch (status.state) {
     case "ok":
-      return <span className={cn(base, "border-run/45 bg-run/8 text-run")}><span className="size-[5px] bg-run shadow-[0_0_6px_#3DF5A0]" />CONNECTED</span>;
+      return <span className={cn(base, "border-run/45 bg-run/8 text-run")}><span className="size-[5px] bg-run hud:shadow-[0_0_6px_#3DF5A0]" />CONNECTED</span>;
     case "invalid":
       return <span className={cn(base, "border-danger/50 bg-danger/8 text-danger")}><X className="icon-strong size-[11px]" />KEY INVALID</span>;
     case "error":
@@ -485,8 +485,8 @@ function ProviderCard({ provider }: { provider: ChatProvider }) {
                   aria-describedby={shownError ? `${id}-err` : undefined}
                   onKeyDown={(e) => e.key === "Enter" && void save()}
                   className={cn(
-                    "h-[34px] w-full border bg-well pr-[38px] pl-2.5 font-mono text-[12px] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-dim focus:border-accent focus:shadow-[0_0_12px_rgba(77,163,255,0.3)]",
-                    shownError ? "border-danger shadow-[0_0_10px_rgba(255,84,112,0.25)]" : "border-line",
+                    "h-[34px] w-full border bg-well pr-[38px] pl-2.5 font-mono text-[12px] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-dim focus:border-accent hud:focus:shadow-[0_0_12px_rgba(77,163,255,0.3)] graphite:focus:shadow-[0_0_0_3px_var(--color-accent-subtle)]",
+                    shownError ? "border-danger hud:shadow-[0_0_10px_rgba(255,84,112,0.25)]" : "border-line",
                   )}
                 />
                 <IconButton aria-label={showKey ? "Hide key" : "Show key"} size={30} className="absolute top-0.5 right-0.5" onClick={() => setShowKey((v) => !v)}>
@@ -698,7 +698,7 @@ function PolicyOption({ value, selected }: { value: ApprovalPolicy; selected: bo
       onClick={() => setChatPrefs({ defaultPolicy: value })}
       className={cn("flex gap-2.5 border px-2.5 py-2 text-left", selected ? "border-warn/55 bg-warn/[0.05]" : "border-line bg-transparent hover:border-line-strong")}
     >
-      <span className={cn("mt-[3px] size-3 shrink-0 border", selected ? "border-warn bg-warn shadow-[inset_0_0_0_3px_#0A111A]" : "border-line-strong")} />
+      <span className={cn("mt-[3px] size-3 shrink-0 border", selected ? "border-warn bg-warn shadow-[inset_0_0_0_3px_var(--color-surface)]" : "border-line-strong")} />
       <span className="flex flex-col gap-0.5">
         <span className="font-semibold">{POLICY_LABEL[value]}</span>
         <span className="text-[12px] text-body">{POLICY_HINT[value]}</span>
@@ -725,7 +725,7 @@ function Segmented<T extends string>({ label, value, options, onChange, mono }: 
               "h-[30px] border-0 px-3.5 uppercase transition-colors duration-200",
               mono ? "font-mono text-[11px]" : "font-display text-[12px] font-bold tracking-[0.14em]",
               i > 0 && "border-l border-line",
-              on ? "bg-accent/12 text-accent shadow-[inset_0_-2px_0_#4DA3FF]" : "bg-transparent text-muted hover:text-fg",
+              on ? "bg-accent/12 text-accent shadow-[inset_0_-2px_0_var(--color-accent)]" : "bg-transparent text-muted hover:text-fg",
             )}
           >
             {o.label}

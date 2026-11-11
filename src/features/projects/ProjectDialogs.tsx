@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { addProject, createProject, pickFolder, removeProject } from "@/app/actions";
+import { useProjectBacklog } from "@/features/backlog/actions";
+import { useBacklog } from "@/features/backlog/store";
 import { useChat } from "@/features/chat/store";
 import { saveAll } from "@/features/editor/models";
 import { isLive, sessionsFor, set, useApp } from "@/app/store";
@@ -151,8 +153,12 @@ export function RemoveProjectDialog({ projectId }: { projectId: string }) {
   );
   const [busy, setBusy] = useState(false);
   const chats = useChat((st) => st.conversations.filter((c) => c.projectId === projectId).length);
+  useProjectBacklog(projectId);
+  const backlog = useBacklog((st) => st.items[projectId]?.length ?? 0);
   if (!project) return null;
   const chatsText = chats === 0 ? "" : ` Its ${chats} chat${chats === 1 ? "" : "s"} move${chats === 1 ? "s" : ""} to Ask, where agents can't run.`;
+  const backlogText =
+    backlog === 0 ? "" : ` Its ${backlog} backlog item${backlog === 1 ? "" : "s"} and ${backlog === 1 ? "its" : "their"} screenshots are deleted from AgentHub.`;
   const sessionsText =
     running === 0 ? "" : ` and ${running} running session${running === 1 ? "" : "s"} will be ended`;
   const unsavedText =
@@ -165,7 +171,7 @@ export function RemoveProjectDialog({ projectId }: { projectId: string }) {
       tone="danger"
       onClose={close}
       title={`Remove ${project.name} from AgentHub?`}
-      description={`The folder and its files stay on disk. Its saved layout is forgotten${sessionsText}.${chatsText}${unsavedText}`}
+      description={`The folder and its files stay on disk. Its saved layout is forgotten${sessionsText}.${chatsText}${backlogText}${unsavedText}`}
       footer={
         <>
           <Button variant="outline" onClick={close}>

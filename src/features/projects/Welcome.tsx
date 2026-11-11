@@ -23,7 +23,7 @@ export function Welcome() {
       <div className="relative flex w-full max-w-[620px] flex-col gap-[34px]">
         <div className="flex flex-col gap-3">
           <span className="font-mono text-[11px] tracking-[0.08em] text-accent">▸ SYSTEM READY · 0 PROJECTS</span>
-          <h1 className="m-0 font-display text-[44px] leading-[46px] font-bold tracking-[0.06em] uppercase [text-shadow:0_0_22px_rgba(77,163,255,0.45)]">
+          <h1 className="m-0 font-display text-[44px] leading-[46px] font-bold tracking-[0.06em] uppercase hud:[text-shadow:0_0_22px_rgba(77,163,255,0.45)]">
             Add your first project
           </h1>
           <p className="m-0 max-w-[500px] text-[14px] leading-[22px] text-pretty text-body">
@@ -62,7 +62,7 @@ export function Welcome() {
               Recheck
             </Button>
           </div>
-          <div className="flex flex-col border border-line bg-[rgba(10,17,26,0.9)]">
+          <div className="flex flex-col border border-line bg-overlay/90">
             {agents.map((e, i) => (
               <div key={e.engine} className={cn("flex items-center gap-3 px-3.5 py-[11px]", i > 0 && "border-t border-line")}>
                 <span className="w-[130px] shrink-0 truncate font-semibold">{e.label}</span>
@@ -121,7 +121,7 @@ function ActionCard({
       className={cn(
         "hud flex flex-col items-start gap-3.5 border p-5 text-left transition-colors duration-200",
         primary
-          ? "border-accent/60 bg-accent/7 shadow-[0_0_26px_rgba(77,163,255,0.16),inset_0_0_30px_rgba(77,163,255,0.06)] hover:bg-accent/10"
+          ? "border-accent/60 bg-accent/7 hud:shadow-[0_0_26px_rgba(77,163,255,0.16),inset_0_0_30px_rgba(77,163,255,0.06)] hover:bg-accent/10"
           : "border-line bg-surface hover:border-accent/45",
       )}
     >

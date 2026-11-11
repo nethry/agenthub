@@ -4,10 +4,11 @@ import { AlertTriangle, ArrowUp, FileText, Shield, X } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { indexFor } from "@/features/palette/fileIndex";
 import { ChatUsage } from "@/features/usage/UsagePanel";
-import { cn, fuzzyMatch } from "@/lib/utils";
+import { clipboardImages, cn, fuzzyMatch } from "@/lib/utils";
 import { attachFile, composerConfig, cyclePolicy, detachFile, detachImage, engineInfo, openAiSettings, pasteImages, requestMode, sendMessage, setDraft, stopGenerating } from "./actions";
 import { EngineMenu } from "./EngineMenu";
-import { AGENT_MODES, formatBytes, isAgent, MODE_META, modeAvailability, POLICY_HINT, POLICY_LABEL } from "./models";
+import { PendingBacklogChip } from "@/features/backlog/ChatLinks";
+import { AGENT_MODES, formatBytes, isAgent, MODE_META, modeAvailability, POLICY_HINT, POLICY_LABEL, tint } from "./models";
 import { draftKey, isGenerating, useChat, type PendingImage } from "./store";
 import { workspaceKey } from "./models";
 
@@ -28,6 +29,7 @@ export function Composer({ projectId, hero = false }: { projectId: string | null
   const draft = useChat((s) => s.drafts[key] ?? "");
   const attachments = useChat((s) => s.attachments[key] ?? EMPTY);
   const images = useChat((s) => s.images[key] ?? NO_IMAGES);
+  const aboutItem = useChat((s) => !!s.backlog[key]);
   const generating = useChat((s) => isGenerating(s, cfg.conversation?.id ?? null));
   const sendKey = useChat((s) => s.prefs.sendKey);
   const error = useChat((s) => s.composerError);
@@ -80,8 +82,9 @@ export function Composer({ projectId, hero = false }: { projectId: string | null
           cfg.mode === "agent" ? "border-agent/45" : cfg.mode === "plan" ? "border-plan/40" : "border-line focus-within:border-accent/60",
         )}
       >
-        {(attachments.length > 0 || images.length > 0) && (
+        {(attachments.length > 0 || images.length > 0 || aboutItem) && (
           <div className="flex flex-wrap gap-1.5 px-3 pt-2.5">
+            <PendingBacklogChip draftKey={key} />
             {images.map((img) => (
               <span
                 key={img.id}
@@ -117,7 +120,7 @@ export function Composer({ projectId, hero = false }: { projectId: string | null
           placeholder={placeholder}
           onChange={(e) => setDraft(key, e.target.value)}
           onPaste={(e) => {
-            const files = Array.from(e.clipboardData.files).filter((f) => f.type.startsWith("image/"));
+            const files = clipboardImages(e.clipboardData);
             if (files.length === 0) return;
             // Keep any text that came with it (e.g. from a document); a bare image only attaches.
             if (!e.clipboardData.getData("text/plain")) e.preventDefault();
@@ -156,7 +159,7 @@ export function Composer({ projectId, hero = false }: { projectId: string | null
                       i > 0 && "border-l border-line",
                       sel ? "" : !avail.ok ? "cursor-not-allowed bg-transparent text-dim" : "bg-transparent text-muted hover:text-fg",
                     )}
-                    style={sel ? { color: mm.color, background: `${mm.color}24`, boxShadow: `inset 0 -2px 0 ${mm.color}` } : undefined}
+                    style={sel ? { color: mm.color, background: tint(mm.tone, 14), boxShadow: `inset 0 -2px 0 ${mm.color}` } : undefined}
                   >
                     {mm.label}
                   </button>
@@ -195,7 +198,7 @@ export function Composer({ projectId, hero = false }: { projectId: string | null
               title={`Send (${sendKey === "enter" ? "Enter" : "Ctrl Enter"})`}
               disabled={!canSend}
               onClick={send}
-              className="chamfer flex h-[30px] w-[38px] items-center justify-center border-0 bg-accent text-on-accent transition-opacity duration-200 hover:bg-accent-hover disabled:opacity-40"
+              className="chamfer flex h-[30px] w-[38px] items-center justify-center border-0 bg-accent-fill text-on-accent transition-opacity duration-200 hover:bg-accent-fill-hover disabled:opacity-40"
             >
               <ArrowUp className="icon-strong size-4" />
             </button>
@@ -248,7 +251,7 @@ function AttachButton({ projectId, draftKey: key }: { projectId: string; draftKe
           align="start"
           sideOffset={8}
           collisionPadding={12}
-          className="hud z-50 w-[380px] border border-accent/45 bg-surface shadow-[0_18px_48px_rgba(0,0,0,0.6)] outline-none"
+          className="hud z-50 w-[380px] border border-accent/45 bg-surface hud:shadow-[0_18px_48px_rgba(0,0,0,0.6)] graphite:shadow-(--shadow-pop) outline-none"
         >
           <div className="border-b border-line p-2">
             <label htmlFor="attach-q" className="sr-only">

@@ -30,5 +30,5 @@ export function UpdateBadge() {
 export function UpdateDot() {
   const state = useUpdates((s) => s.state);
   if (!updatePending({ state })) return null;
-  return <span aria-hidden="true" className="absolute top-[7px] right-[7px] size-[7px] bg-accent shadow-[0_0_6px_#4DA3FF]" />;
+  return <span aria-hidden="true" className="absolute top-[7px] right-[7px] size-[7px] bg-accent hud:shadow-[0_0_6px_#4DA3FF]" />;
 }

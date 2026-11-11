@@ -57,7 +57,7 @@ export function signalParts(label: string, signals: Signals): string[] {
 
 export function AttentionBadge({ count, className }: { count: number; className?: string }) {
   return (
-    <span className={cn("flex h-[15px] min-w-[15px] items-center justify-center bg-warn px-[3px] font-mono text-[9px] text-on-accent", className)}>{count}</span>
+    <span className={cn("flex h-[15px] min-w-[15px] items-center justify-center bg-warn px-[3px] font-mono text-[9px] hud:text-on-accent graphite:text-ground", className)}>{count}</span>
   );
 }
 
@@ -90,7 +90,7 @@ function RailButton({
         onClick={onClick}
         className={cn(
           "flex w-full items-start gap-2.5 border px-2 py-1.5 text-left transition-colors duration-200",
-          active ? "border-accent/50 bg-accent/10 shadow-[0_0_14px_rgba(77,163,255,0.15)]" : "border-transparent bg-transparent hover:bg-accent/5",
+          active ? "border-accent/50 bg-accent/10 hud:shadow-[0_0_14px_rgba(77,163,255,0.15)]" : "border-transparent bg-transparent hover:bg-accent/5",
         )}
       >
         <span
@@ -118,7 +118,7 @@ function RailButton({
       onClick={onClick}
       className={cn(
         "relative flex size-10 shrink-0 items-center justify-center border font-display text-[13px] font-bold transition-colors duration-200",
-        active ? "border-accent/50 bg-accent/10 text-accent shadow-[0_0_14px_rgba(77,163,255,0.15)]" : cn("border-line bg-transparent hover:border-line-strong", colorClass),
+        active ? "border-accent/50 bg-accent/10 text-accent hud:shadow-[0_0_14px_rgba(77,163,255,0.15)]" : cn("border-line bg-transparent hover:border-line-strong", colorClass),
       )}
     >
       {short}
@@ -150,7 +150,7 @@ export function ProjectRail() {
     <nav
       aria-label="Projects"
       className={cn(
-        "flex shrink-0 flex-col gap-1.5 border-r border-line bg-[rgba(5,8,13,0.85)] pt-3 pb-2.5",
+        "flex shrink-0 flex-col gap-1.5 border-r border-line bg-ground/85 pt-3 pb-2.5",
         expanded ? "w-[232px] items-stretch" : "w-[60px] items-center",
       )}
     >

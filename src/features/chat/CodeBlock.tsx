@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { useApp } from "@/app/store";
 import { copyText } from "./actions";
 import { highlight, languageBadge } from "./highlight";
 
 /** Fenced code in an answer: language label, copy action, Monaco colors. */
 export function CodeBlock({ code, lang }: { code: string; lang: string }) {
-  const [colored, setColored] = useState<{ code: string; html: string } | null>(null);
+  // Colorized markup belongs to one theme; recolor after a switch.
+  const theme = useApp((s) => s.themeKey);
+  const [colored, setColored] = useState<{ code: string; theme: string; html: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -14,14 +17,14 @@ export function CodeBlock({ code, lang }: { code: string; lang: string }) {
     // While an answer streams the code changes every frame; highlight once it settles.
     const t = setTimeout(() => {
       highlight(code, lang)
-        .then((html) => live && html !== null && setColored({ code, html }))
+        .then((html) => live && html !== null && setColored({ code, theme, html }))
         .catch(() => {});
     }, 180);
     return () => {
       live = false;
       clearTimeout(t);
     };
-  }, [code, lang]);
+  }, [code, lang, theme]);
 
   useEffect(() => () => clearTimeout(copyTimer.current), []);
 
@@ -33,7 +36,7 @@ export function CodeBlock({ code, lang }: { code: string; lang: string }) {
   };
 
   // Highlighted markup only while it matches the current text.
-  const html = colored && colored.code === code ? colored.html : null;
+  const html = colored && colored.code === code && colored.theme === theme ? colored.html : null;
 
   return (
     <figure className="chat-code m-0 border border-line bg-well">

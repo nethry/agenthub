@@ -100,3 +100,16 @@ export function safeExternalUrl(raw: string): string | null {
     return null;
   }
 }
+
+/** A clipboard file as a `data:` URL (its type as the browser reports it; the backend checks the bytes). */
+export async function readDataUrl(file: Blob): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return `data:${file.type};base64,${btoa(bin)}`;
+}
+
+/** Image files of a paste event (screenshots from the clipboard). */
+export function clipboardImages(data: DataTransfer | null): File[] {
+  return data ? Array.from(data.files).filter((f) => f.type.startsWith("image/")) : [];
+}

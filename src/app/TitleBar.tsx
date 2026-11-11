@@ -11,7 +11,7 @@ export function Logo() {
     <svg
       viewBox="0 0 24 24"
       aria-hidden="true"
-      className="size-5 fill-none stroke-accent drop-shadow-[0_0_4px_rgba(77,163,255,0.6)]"
+      className="size-5 fill-none stroke-accent hud:drop-shadow-[0_0_4px_rgba(77,163,255,0.6)]"
       strokeWidth={1.5}
     >
       <polygon points="12 2 21 7 21 17 12 22 3 17 3 7" />
@@ -64,7 +64,7 @@ function GeneralButton() {
       onClick={selectGeneral}
       className={cn(
         "relative flex h-7 shrink-0 items-center gap-2 border px-2.5 font-display text-[12px] font-bold tracking-[0.14em] uppercase transition-colors duration-200",
-        active ? "border-accent/50 bg-accent/10 text-accent shadow-[0_0_10px_rgba(77,163,255,0.2)]" : "border-line bg-surface text-muted hover:border-line-strong hover:text-fg",
+        active ? "border-accent/50 bg-accent/10 text-accent hud:shadow-[0_0_10px_rgba(77,163,255,0.2)]" : "border-line bg-surface text-muted hover:border-line-strong hover:text-fg",
       )}
     >
       <MessagesSquare className="size-3.5" />

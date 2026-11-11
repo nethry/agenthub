@@ -143,6 +143,17 @@ Installed copies find new versions by themselves and install them only when you 
 - **Trust:** every update is verified against the public key in `tauri.conf.json`; a missing or wrong signature is refused. The signing key is kept outside the repository (back it up: without it installed copies can never update again).
 - **Releases:** GitHub Releases (`latest.json` plus the signed NSIS installer) of the repository named in `plugins.updater.endpoints` in `tauri.conf.json`. One version in `package.json` (`pnpm version:set x.y.z` keeps the Cargo manifests and the sidecar package in step, `pnpm version:check` verifies). `.github/workflows/release.yml` builds a draft release from a `v*` tag; see [docs/RELEASING.md](docs/RELEASING.md). Not done yet: Windows code signing (installers are unsigned, so SmartScreen warns).
 
+### 7. Backlog
+
+Each project has a **Backlog** tab: a lightweight list of **features** and **bugs** to work on with the coding agents. It is deliberately small. There are no assignees, sprints, labels or boards; an item has a kind, a status, a priority, a Markdown description, screenshots, a saved plan, related items and the chats started from it. (Not on the design canvas yet; it reuses the Chat list/detail patterns.)
+
+- **Items:** **New feature** starts from a *Goal / Acceptance criteria / Notes* template, **Report bug** from *Steps to reproduce / Expected / Actual / Environment*. IDs are `FEAT-12` / `BUG-13`, numbered in one sequence per project. Statuses are shared, with names per kind: Idea/Reported → Planned/Diagnosed → In progress → Review → Done/Fixed (or Won't do / Won't fix). The list groups items by status, filters Features / Bugs, searches titles, descriptions and IDs, and hides closed items unless you ask.
+- **Screenshots:** `Ctrl V` anywhere on an item (or in the new-item form) attaches clipboard images, or use **Add screenshot**; up to 8 per item, PNG/JPEG/GIF/WebP up to 5 MB, checked from the bytes like chat images and kept in the app data folder (`backlog-images/<item>/`), never in the project.
+- **AI actions:** features have **Plan** (Plan mode) and **Implement** (Agent mode); bugs have **Investigate** (Plan mode: root cause and a fix proposal, no changes) and **Fix** (Agent mode). Each opens a new chat in the project with an instruction in the composer, the item's **backlog context** as a chip and the item's newest screenshots (up to 4) as pasted images. Nothing is sent until you press Send, and Agent mode asks for the usual confirmation. Sending links the chat to the item; Implement and Fix move an Idea or Planned item to In progress.
+- **Shared context:** the agent gets a budgeted context pack (about 24k characters, `src-tauri/src/backlog/context.rs`): the current item in full with its saved plan, related items in full while they fit, and every other open item as one line (key, status, priority, title, first line, plan headline), so a plan takes the rest of the backlog into account without the whole backlog in every prompt. It is stored on the message, shown as an expandable chip (in the composer before sending, too) and resent on Regenerate.
+- **Plans and status:** **Save to FEAT-12** on a Plan card, or **Save as plan of FEAT-12** under a Plan-mode answer, stores the plan on the item; you can also write or edit it by hand. AgentHub only *suggests* status changes (Planned once a plan is saved, Review once the latest Implement/Fix chat completed); Done is always yours to set. A linked chat shows the item's ID in its header; the item lists its chats with their status.
+- Deleting an item removes it and its screenshots from AgentHub; its chats stay. Removing a project deletes its backlog from AgentHub (the dialog says so); project files are never touched.
+
 ## User experience
 
 ### Overall layout
@@ -151,17 +162,18 @@ The application uses a **project-centric dashboard**, not a traditional VS Code-
 
 1. **Title bar (40 px, custom):** AgentHub mark, global search (`Ctrl K`: chats, files, commands, projects), the **Ask** button (chats without a project), an **Update** chip while an update is waiting, window controls.
 2. **Project rail (232 px, or 60 px collapsed):** the projects with their full names (initials only when collapsed with the »/« button; the choice is saved), an add-project button and Settings. **General** (chats without a project) is the button next to the title-bar search, with the same signals. An amber count shows conversations that need you (Approve, Interrupted, Error); a cyan dot means a chat is running; a green dot means a terminal is.
-3. **Workspace header (48 px):** name and path, view tabs **Overview · Chat · Code · Terminals** (General, titled **Ask**, has only Chat; the Chat tab carries the amber count), and the Chat focus button (`Ctrl Shift F` hides rail, list and panel).
+3. **Workspace header (48 px):** name and path, view tabs **Overview · Chat · Backlog · Code · Terminals** (General, titled **Ask**, has only Chat; the Chat tab carries the amber count), and the Chat focus button (`Ctrl Shift F` hides rail, list and panel).
 4. **Overview:** project instructions beside live terminals, with a compact Chat status strip. The root README opens automatically; choose another project Markdown document, jump to headings, copy code blocks or open it in the editor. Existing unsaved editor content is shown with a warning; large documents open in the editor instead. The terminal dock shows one session or two stacked panes, with session selectors, inline rename, shells and saved commands, and expand/hide controls. Hiding a pane never ends its process. The Chat strip opens the selected conversation (or running/recent work when none is selected); other conversations needing attention have a separate menu. Pane width, collapsed state, document and split preference are remembered per project; session ids are transient and commands never restart automatically. Narrow layouts stack the panes. This approved Overview revision supersedes the canvas's four-list "v2 · Project overview"; Git tools and embedded Chat remain outside this stage.
 5. **Chat:** conversation list (268 px; search, status chips, rename, delete), conversation header (title, mode, engine · model · policy, status, Changes toggle), transcript (max 760 px), composer (engine & model menu `Ctrl /`, Plan/Agent switch in projects, policy chip, `@` attachments and pasted images, Send/Stop), and the Changes / Activity panel (380 px, agent chats). See [Unified Chat](#4-unified-chat-coding-agents-and-direct-apis).
-6. **Editor view:** a sidebar that is either the project-scoped explorer (modified, **AI** and Git status markers) or **Source control**, and the Monaco editor with tabs, breadcrumbs, unsaved indicator, conflict banner and a status bar (branch and sync counts, line/column, language, encoding, line endings). Opening a file from anywhere switches here.
-7. **Terminals view:** shells and saved commands only — a draggable session list (inline rename) beside split terminal panes, plus terminal focus mode (numbered tabs, `Shift Esc` to exit).
+6. **Backlog:** item list (340 px; New feature / Report bug, Features/Bugs filter, search, Closed toggle, grouped by status) beside the item: title, status and priority, suggested status change, Plan/Implement or Investigate/Fix, description, screenshots, plan, related items and linked chats. See [Backlog](#7-backlog).
+7. **Editor view:** a sidebar that is either the project-scoped explorer (modified, **AI** and Git status markers) or **Source control**, and the Monaco editor with tabs, breadcrumbs, unsaved indicator, conflict banner and a status bar (branch and sync counts, line/column, language, encoding, line endings). Opening a file from anywhere switches here.
+8. **Terminals view:** shells and saved commands only — a draggable session list (inline rename) beside split terminal panes, plus terminal focus mode (numbered tabs, `Shift Esc` to exit).
 
 Overlays and secondary screens:
 
 - **Command palette (`Ctrl K`):** fuzzy search across Chats (all projects and General), Projects, Files (`@`), Sessions (`#`), and Commands (`>`, including *New Agent chat with …*); `Enter` opens, `Ctrl Enter` opens a terminal in focus mode. Switching projects never ends live sessions or chat turns.
 - **First run:** *Open existing folder* (`Ctrl O`) or *Create new folder* (`Ctrl Shift N`), plus **Connect AI**: the runtime probe and an *Add key* shortcut.
-- **Settings (`Ctrl ,`):** General (default shell, updates, usage thresholds), Appearance, AI integrations, Chat, Editor, Git, Terminals & shells, Keyboard shortcuts.
+- **Settings (`Ctrl ,`):** General (default shell, updates, usage thresholds), Appearance (theme: Midnight HUD, Graphite light, Graphite dark or Graphite system), AI integrations, Chat, Editor, Git, Terminals & shells, Keyboard shortcuts.
 - **Dialogs:** Add project, Unsaved changes, End running session, Remove project (its chats move to Ask), Quit with running work, Delete conversation (file changes on disk are kept), Revert all changes, Update available / Restart to update, custom saved command — each states its consequence explicitly.
 
 Panels can be resized or collapsed. The app should remember the selected view and basic layout for each project.
@@ -190,7 +202,11 @@ Default keyboard shortcuts (also listed in Settings › Keyboard shortcuts). The
 
 Two deliberate departures from the designs: focus mode exits with `Shift Esc` (not plain `Esc`), and its session tabs switch with `Ctrl` + number (not a bare number). Plain `Esc` and digits must reach the terminal, because agents such as Claude Code use `Esc` to interrupt.
 
-### Visual direction: Midnight HUD
+### Visual direction: themes
+
+AgentHub has two themes, picked in **Settings › Appearance** and applied instantly to the whole app (chrome, Monaco, chat code blocks, terminals and the window background): **Midnight HUD** (the default) and **Graphite** in light, dark or *system* (follows Windows live). Layout, IA and behaviour are the same in both; only tokens, type, shape and decoration change.
+
+#### Midnight HUD
 
 A **dark-only**, precise heads-up-display look: square corners, thin lines, one holographic blue accent, and glow reserved for live state. The design source of truth is the AgentHub design canvas, page **v2 · Unified workspace** (interactive showcase, project overview, Chat Plan/Agent/Ask scenarios, chat states, compact 1024 px, editor conflict, terminals, AI integrations, overlays, component inventory, handoff). Page v1 is kept for history.
 
@@ -257,6 +273,27 @@ Design guidelines:
 - Static decoration (grid, scanlines, empty-state reticle) stays low-opacity and never animates continuously.
 - Write plain, specific copy; destructive dialogs state exactly what will and won't happen.
 
+#### Graphite
+
+A calm theme for long sessions: neutral graphite greys, one desaturated blue accent, Inter in sentence case, softly rounded corners, and colour only where it means something (accent, status, modes, diffs, syntax). No glow, chamfers, corner brackets, grid or scanlines; status chips become subtle filled badges. The design source is the design canvas page **Theme · Graphite** (interactive preview, dark and light boards for every view, components, foundations and the handoff).
+
+| Token | Dark | Light | Use |
+| --- | --- | --- | --- |
+| Ground (`--bg-app`) | `#16171A` | `#EEF0F3` | App background, rails |
+| Surface | `#1C1D21` | `#F7F8FA` | Panels, cards |
+| Well (`--bg-sunken`) | `#131416` | `#F7F8FA` | Editor, terminal, inputs |
+| Raised / overlay | `#232429` / `#2A2B31` | `#FFFFFF` | User messages / menus and dialogs |
+| Line / strong | `#2C2E34` / `#3A3D45` | `#D9DDE3` / `#C3C9D1` | Borders |
+| Accent (text) | `#7FB0EA` | `#245FA6` | Links, focus, selection, indicators |
+| Accent (fill) | `#3570B8` | `#2F6DB8` | Primary buttons, switches (white text) |
+| Text / muted / subtle | `#D5D8DE` / `#A0A5AF` / `#888E99` | `#272A31` / `#4F5560` / `#656B76` | Body 11.8:1 dark, 13.5:1 light; secondary ≥ 4.5:1 |
+| Success / warning / danger | `#5FB07F` / `#D3A24A` / `#E06A6A` | `#2C7A4B` / `#8A5F0E` / `#B83A3A` | Status |
+| Modes Ask / Plan / Agent | `#7FB0EA` / `#A995DB` / `#5DBDB8` | `#245FA6` / `#6A50B0` / `#1F7F7A` | Always with the label |
+
+Type: Inter 400–600 for UI (13/20), JetBrains Mono for code and terminals. Radius: 5 px controls, 4 px chips, 8 px cards, 10 px dialogs. Motion 100–220 ms, never decorative loops. The syntax and ANSI palettes are in `src/app/themePalettes.ts`.
+
+**How themes are built.** `<html data-theme="hud|graphite" data-mode="dark|light">` selects the theme (`src/app/theme.ts`, `src/app/appearance.ts`). Components use only the semantic tokens in `src/styles/globals.css` (Graphite re-maps them per mode) and the `rounded-ctl` / `-chip` / `-card` / `-dialog` radii (0 in Midnight HUD). HUD-only decoration is written with the `hud:` variant (glows, text-shadows) and Graphite-only styling with `graphite:`. Monaco, xterm, the native window background and the Settings previews take their colours from `src/app/themePalettes.ts`; a test checks they match the CSS. The choice is the `appearance` setting, cached for the first frame so a Graphite window doesn't flash Midnight HUD.
+
 ## Technology stack
 
 | Layer | Technology | Responsibility |
@@ -264,7 +301,8 @@ Design guidelines:
 | Desktop runtime | **Tauri 2** | Native windows, IPC, packaging, OS integration |
 | Frontend | **React + TypeScript + Vite** | Workspace UI |
 | Components | **shadcn/ui** | Accessible component primitives |
-| Styling | **Tailwind CSS** | Theme and layout |
+| Styling | **Tailwind CSS** | Theme tokens (Midnight HUD, Graphite) and layout |
+| Fonts | **@fontsource** (Rajdhani, Chakra Petch, Inter, JetBrains Mono) | Bundled fonts, no CDN |
 | Animation | **Motion for React** | UI transitions |
 | Client state | **Zustand** | Active project, views, transient UI state |
 | Code editor | **Monaco Editor** | Syntax-highlighted file editing |
@@ -384,16 +422,34 @@ ChatMessage
 
 ChatItem              # agent activity and attachments, ordered within a message
   id, message_id, idx
-  kind                # text | thinking | tool | command | permission | plan | file_change | system | error | attachment | image
+  kind                # text | thinking | tool | command | permission | plan | file_change | system | error | attachment | image | backlog_context
   status              # pending | running | completed | failed | declined | cancelled
   payload             # typed JSON (never raw protocol messages)
 
 EngineProbe           # cached detection result per runtime (no secrets)
+
+BacklogItem           # backlog_items (migration v4)
+  id, project_id      # deleted with its project
+  seq                 # per project, both kinds: FEAT-<seq> / BUG-<seq>
+  kind                # feature | bug
+  title, body         # body is Markdown
+  status              # open | planned | in_progress | review | done | dropped
+  priority            # low | normal | high
+  plan?               # Markdown, saved from a chat or written by hand
+  related[]           # other items of the project (sent to agents in full)
+  created_at, updated_at
+
+BacklogLink           # backlog_links: a chat started from an item (deleted with the chat)
+  item_id, conversation_id
+  purpose             # plan | investigate | implement | fix
+
+BacklogImage          # backlog_images: screenshot metadata; the file is backlog-images/<item>/<id>.<ext>
+  id, item_id, name, mime, size, created_at
 ```
 
-Migrations are versioned and each runs in one transaction with its `user_version` bump (a failure leaves the database unchanged). **v3** renames `provider` to `engine` (`openai`→`openai-api`, `anthropic`→`anthropic-api`), adds project, mode, policy, status and runtime-session columns (existing chats land in General), adds `chat_items` and `engine_probes`, turns built-in agent presets into engine path overrides (when you had customized the path) and deletes them; user-made presets stay as saved terminal commands. Removing a project moves its chats to General.
+Migrations are versioned and each runs in one transaction with its `user_version` bump (a failure leaves the database unchanged). **v3** renames `provider` to `engine` (`openai`→`openai-api`, `anthropic`→`anthropic-api`), adds project, mode, policy, status and runtime-session columns (existing chats land in General), adds `chat_items` and `engine_probes`, turns built-in agent presets into engine path overrides (when you had customized the path) and deletes them; user-made presets stay as saved terminal commands. Removing a project moves its chats to General. **v4** adds `backlog_items`, `backlog_links` and `backlog_images`; removing a project deletes its backlog.
 
-Persist project registration, saved commands, preferences, restorable UI state, conversations and items to SQLite. Live PTY handles, terminal buffers and runtime processes are **not** in the database; file checkpoints and pasted chat images are files in the app data folder (`checkpoints/` and `chat-images/<conversation>/`). Preferences are JSON values in the `settings` key/value table (`editor`, `terminal`, `usage`, `chat`, `git`, `updates`, `ui`); keys owned by the backend (`engine_path:*`, `git_path`, `engines_disabled`, `updates_last_check`) can't be written from the UI. Git status and update state aren't stored: the repository and the release host are the source of truth.
+Persist project registration, saved commands, preferences, restorable UI state, conversations and items to SQLite. Live PTY handles, terminal buffers and runtime processes are **not** in the database; file checkpoints, pasted chat images and backlog screenshots are files in the app data folder (`checkpoints/`, `chat-images/<conversation>/` and `backlog-images/<item>/`). Preferences are JSON values in the `settings` key/value table (`editor`, `terminal`, `usage`, `chat`, `git`, `updates`, `ui`); keys owned by the backend (`engine_path:*`, `git_path`, `engines_disabled`, `updates_last_check`) can't be written from the UI. Git status and update state aren't stored: the repository and the release host are the source of truth.
 
 ## Repository structure
 
@@ -421,12 +477,13 @@ agenthub/
 │   │   ├── overview/        # README reader, live terminal dock, compact Chat status
 │   │   ├── palette/         # command palette
 │   │   ├── chat/            # unified Chat: store, flows, view, list, items, composer, engine menu, changes panel
+│   │   ├── backlog/         # Backlog view, item detail, store, flows, model, chat links (context chip, Save plan)
 │   │   ├── usage/           # chat usage readout and details
 │   │   ├── git/             # Source control sidebar, branch chip, git store and flows
 │   │   ├── updates/         # update badge, dialog, store and flows
 │   │   └── settings/        # settings screen, AI integrations, Chat, saved commands
 │   ├── lib/                 # typed IPC client, types, utils
-│   └── styles/globals.css   # Midnight HUD tokens (Tailwind v4 @theme)
+│   └── styles/globals.css   # theme tokens: Midnight HUD (@theme) and Graphite dark/light
 └── src-tauri/
     ├── src/
     │   ├── commands/        # Tauri command handlers (thin)
@@ -437,6 +494,7 @@ agenthub/
     │   ├── chat/            # service, repository, policy, engines, checkpoints, images, secrets,
     │   │                    # providers/{openai,anthropic,gemini},
     │   │                    # agents/{turn,jsonrpc,codex,acp,gemini,antigravity,sidecar}
+    │   ├── backlog/         # features and bugs: repository, screenshots, the context pack for chats
     │   ├── usage/           # Codex usage windows
     │   ├── updates/         # update check, download, install; the daily check
     │   ├── git/             # git runner, status, staging, commit, sync, git-dir watcher
@@ -524,6 +582,20 @@ In v1 agents ran as terminal presets. Phase 5 moved them into Chat; the items be
 - [ ] Confirm an end-to-end update between two published versions, including a refused bad signature, and record it under Verification status.
 - [ ] Windows code signing (Authenticode or Azure Trusted Signing).
 
+### Phase 8 — Backlog
+
+- [x] Features and bugs per project (migration v4): create, edit, status, priority, delete; grouped list with filters and search; Markdown descriptions from templates.
+- [x] Clipboard screenshots on items (checked from the bytes, app data folder, up to 8 per item).
+- [x] Plan / Implement (features) and Investigate / Fix (bugs) open a linked chat with the budgeted backlog context and the item's screenshots in the draft.
+- [x] Save a chat's plan to its item; suggested status changes (never automatic Done); related items; linked chats in both directions.
+- [ ] Design-canvas page for the Backlog (built without one, from the Chat patterns).
+- [ ] Optional export of the backlog as Markdown files (for sharing through git).
+
+### Phase 9 — Themes
+
+- [x] Theme switching in Settings › Appearance: Midnight HUD, Graphite light, Graphite dark, Graphite system (follows Windows live); applied to the chrome, Monaco, chat code blocks, terminals and the window, saved as the `appearance` setting.
+- [ ] Graphite's other Appearance controls from the canvas: density (compact / comfortable), interface text size, code ligatures, reduce motion.
+
 ### Later enhancements
 
 - macOS and Linux packaging and shell profiles.
@@ -541,6 +613,7 @@ Because AgentHub can edit local files and spawn arbitrary programs, these are fi
 - Do not store API keys or credentials in SQLite or logs. Direct-API keys (and Claude Agent's Anthropic key) live in the OS credential store, are read only in Rust and reach a runtime only through its process environment; the UI sees the last four characters. Gemini CLI gets the Gemini API key the same way. Codex, Copilot and Antigravity keep their own sign-in; AgentHub never reads their credential files.
 - Every agent permission request is checked by `chat::policy` (mode, approval policy, project root with `..` and symlinks resolved) before the runtime is answered; unknown operations are never auto-approved, approvals never outlive a runtime session, and a file is checkpointed before any write is allowed.
 - Direct APIs never get tools; files reach them only as explicit attachments read through the root-scoped file service.
+- **Backlog screenshots** follow the same rules as pasted images (type from the bytes, 5 MB, app data folder `backlog-images/`, never the project); a chat gets them as pasted images of the message. Backlog items reach agents only through the context pack shown on the message.
 - **Pasted images.** `Ctrl V` in the composer attaches clipboard images in project and Ask chats (up to 4 per message, 5 MB each). AgentHub decides the type from the bytes (PNG, JPEG, GIF or WebP; anything else is refused), stores them in the app data folder, never in the project, and deletes them with the chat. Each runtime gets the bytes in its own protocol, so none reads a file outside the project: Claude Agent as image blocks, Codex as `image` inputs with a `data:` URL, Copilot as `blob` attachments, Gemini CLI and Antigravity as ACP `image` blocks only when the agent advertises `promptCapabilities.image` (otherwise the turn fails with a clear error). Direct APIs (Ask) get them as OpenAI `input_image`, Anthropic `image` and Gemini `inlineData` parts; Gemini takes no GIF. Because an API request resends the conversation, the 8 newest images of the history go with it and older ones become a one-line note. Regenerate sends them again.
 - Model output is untrusted: no raw HTML, no remote images, only http(s) links, opened in the browser. AgentHub never runs a command it types into a terminal for you.
 - **Git.** The system `git` runs with argument lists (never a shell), `GIT_TERMINAL_PROMPT=0` and in a Windows Job Object; pushes are never forced; operations that rewrite files are refused while those files have unsaved editor changes; discards move the current file to the Recycle Bin first; Git credentials belong to Git Credential Manager (AgentHub stores none) and git output is redacted.
@@ -585,11 +658,11 @@ Commands (run from the repo root). If `pnpm` isn't on your `PATH`, prefix each c
 
 CI (`.github/workflows/ci.yml`) runs the version check, typecheck, tests, `pnpm build`, `cargo test` and `cargo clippy -D warnings` on pull requests and on pushes to `master`. Releases follow [docs/RELEASING.md](docs/RELEASING.md).
 
-App data (SQLite database `agenthub.db`, `checkpoints/` for agent edits and `chat-images/` for pasted images) is stored in `%APPDATA%\com.agenthub.desktop`. Delete that folder to reset AgentHub; this never touches project files.
+App data (SQLite database `agenthub.db`, `checkpoints/` for agent edits, `chat-images/` for pasted images and `backlog-images/` for backlog screenshots) is stored in `%APPDATA%\com.agenthub.desktop`. Delete that folder to reset AgentHub; this never touches project files.
 
 ### Verification status
 
-- **Automated (CI-safe):** frontend unit/render tests (`pnpm test`), backend tests (`cargo test`): migrations against a v2 database, policy, checkpoints, the turn driver with a scripted adapter, direct APIs against a local mock HTTP server, and the Codex, ACP (Gemini CLI, Antigravity) and sidecar adapters against in-memory fake runtimes built from the protocol schemas. No test calls a paid API.
+- **Automated (CI-safe):** frontend unit/render tests (`pnpm test`), backend tests (`cargo test`): migrations against a v2 database (and v3 → v4), the backlog (repository, screenshots, context pack, a message carrying an item's context), policy, checkpoints, the turn driver with a scripted adapter, direct APIs against a local mock HTTP server, and the Codex, ACP (Gemini CLI, Antigravity) and sidecar adapters against in-memory fake runtimes built from the protocol schemas. No test calls a paid API.
 - **Git (automated):** the `git` module runs the real `git` in temporary repositories with isolated config and a local bare origin: staging and discard (Recycle Bin mocked), commit with trailer and amend guard, a failing hook, push rejected then Pull & push, a pull that stops on conflicts then Continue and Abort, publish, and the git-dir watcher. Skipped when git is missing or older than 2.41.
 - **Updates (automated):** scheduling, settings and endpoint logic in Rust, and the update flows in the UI with the backend mocked.
 - **Checked live on the development machine:** probes only — Codex (app-server handshake, `account/read`, `model/list`), Claude Agent (Claude Code 2.1.311 found, models listed through the SDK) and Copilot (SDK-bundled runtime, signed in through the GitHub CLI login).
@@ -615,6 +688,7 @@ The Windows app does its job when a user can:
 9. Use the complete workflow with a consistent dark theme and keyboard navigation.
 10. Review what agents changed, then stage, commit and push it from Source control without leaving AgentHub.
 11. Receive an update, read what changed, and install it when it suits them, without losing running work unknowingly.
+12. Describe features and report bugs (with screenshots) in a project's Backlog, and have an agent plan, investigate, implement or fix them with the rest of the backlog as context.
 
 ## Non-goals
 

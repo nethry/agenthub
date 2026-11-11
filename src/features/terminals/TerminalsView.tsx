@@ -125,7 +125,7 @@ function SessionRow({
       className={cn(
         "group flex flex-col gap-2.5 border py-2.5 pr-1.5 pl-1.5 transition-[border-color,box-shadow,opacity] duration-200",
         failed ? "hud hud-danger border-danger/50 bg-danger/[0.06]" : "bg-surface",
-        !failed && (selected ? "hud border-accent/60 shadow-[0_0_18px_rgba(77,163,255,0.14)]" : "border-line hover:border-line-strong"),
+        !failed && (selected ? "hud border-accent/60 hud:shadow-[0_0_18px_rgba(77,163,255,0.14)]" : "border-line hover:border-line-strong"),
         dragging && "opacity-50",
       )}
     >
@@ -192,7 +192,7 @@ export function Pane({ session: s, active, wide = false, compact = false }: { se
       className={cn(
         "hud flex min-h-0 min-w-0 flex-col border bg-surface",
         compact && "flex-1",
-        active ? "border-accent/60 shadow-[0_0_22px_rgba(77,163,255,0.12)]" : "border-line",
+        active ? "border-accent/60 hud:shadow-[0_0_22px_rgba(77,163,255,0.12)]" : "border-line",
       )}
     >
       <div className="flex h-[34px] shrink-0 items-center gap-2 border-b border-line pr-1.5 pl-3">
@@ -215,7 +215,7 @@ export function Pane({ session: s, active, wide = false, compact = false }: { se
                   setRenaming(false);
                 }
               }}
-              className="h-6 w-[180px] border border-accent bg-well px-2 text-[12.5px] font-semibold shadow-[0_0_10px_rgba(77,163,255,0.35)] outline-none"
+              className="h-6 w-[180px] border border-accent bg-well px-2 text-[12.5px] font-semibold hud:shadow-[0_0_10px_rgba(77,163,255,0.35)] outline-none"
             />
             <span className="truncate text-[11px] text-muted">Enter to rename · Esc to cancel</span>
           </>

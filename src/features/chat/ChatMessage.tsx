@@ -1,6 +1,7 @@
 import { memo, useState, type ReactNode } from "react";
 import { AlertTriangle, Check, Copy, RotateCcw } from "lucide-react";
 import { set as setApp } from "@/app/store";
+import { BacklogContextChip, SavePlanButton } from "@/features/backlog/ChatLinks";
 import type { ChatItem, ChatMessage as Message, Conversation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { copyText, openAiSettings, recheckEngines, regenerate } from "./actions";
@@ -74,8 +75,10 @@ function CopyAction({ text, label }: { text: string; label: string }) {
 export const UserMessage = memo(function UserMessage({ message }: { message: Message }) {
   const attachments = message.items.filter((i) => i.body.kind === "attachment");
   const images = message.items.filter((i) => i.body.kind === "image");
+  const context = message.items.find((i) => i.body.kind === "backlog_context");
   return (
     <div className="group flex flex-col items-end gap-1.5">
+      {context?.body.kind === "backlog_context" && <BacklogContextChip label={context.body.label} text={context.body.text} />}
       {images.length > 0 && (
         <div className="flex flex-wrap justify-end gap-1.5">
           {images.map((i) => (
@@ -116,7 +119,7 @@ export function blocksOf(items: ChatItem[]): Block[] {
       changes.push(item);
       continue;
     }
-    if (item.body.kind === "attachment" || item.body.kind === "image") continue;
+    if (item.body.kind === "attachment" || item.body.kind === "image" || item.body.kind === "backlog_context") continue;
     if (item.body.kind === "text" && !item.body.text.trim()) continue;
     const last = out[out.length - 1];
     if (item.body.kind === "tool") {
@@ -162,7 +165,7 @@ export const AssistantMessage = memo(function AssistantMessage({
         className={cn(
           "flex size-7 shrink-0 items-center justify-center border",
           agent ? "border-agent/60" : "border-accent/60",
-          streaming && (agent ? "live-glow border-agent" : "border-accent shadow-[0_0_12px_rgba(77,163,255,0.35)]"),
+          streaming && (agent ? "live-glow border-agent" : "border-accent hud:shadow-[0_0_12px_rgba(77,163,255,0.35)]"),
           failed && !message.content && !hasItems && "border-danger/60",
         )}
       >
@@ -265,6 +268,7 @@ export const AssistantMessage = memo(function AssistantMessage({
               </span>
             )}
             {message.content && <CopyAction text={message.content} label="Copy answer" />}
+            {message.content && conv.mode === "plan" && <SavePlanButton conv={conv} plan={() => message.content} compact />}
             {canRegenerate && !failed && (
               <ActionButton label="Regenerate answer" icon={<RotateCcw className="size-3.5" />} onClick={retry}>
                 {agent ? "RUN AGAIN" : "REGENERATE"}

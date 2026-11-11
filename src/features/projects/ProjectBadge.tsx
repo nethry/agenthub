@@ -5,7 +5,7 @@ const tones: Record<BadgeTone, string> = {
   warn: "border-warn/60 text-warn",
   run: "border-run/60 text-run",
   tag: "border-tag/60 text-tag",
-  neutral: "border-line-strong text-[#A9BCD1]",
+  neutral: "border-line-strong text-badge",
 };
 
 export function ProjectBadge({ id, name, size = 28, active }: { id: string; name: string; size?: number; active?: boolean }) {

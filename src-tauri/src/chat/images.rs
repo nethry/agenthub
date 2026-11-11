@@ -147,6 +147,13 @@ impl Images {
         Ok(ImageInput { mime: mime.to_string(), data: B64.encode(bytes) })
     }
 
+    pub fn remove_file(&self, conversation_id: &str, id: &str, mime: &str) {
+        if let Ok(path) = self.path(conversation_id, id, mime) {
+            let _ = std::fs::remove_file(path);
+        }
+    }
+
+    /// Removes the folder of `conversation_id` (any folder key, e.g. a backlog item).
     pub fn remove_conversation(&self, conversation_id: &str) {
         if safe_id(conversation_id) {
             let _ = std::fs::remove_dir_all(self.dir.join(conversation_id));

@@ -2,11 +2,14 @@
 // mirrors their status for rendering.
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
+import type { ThemeKey } from "./themePalettes";
 import {
+  defaultAppearancePrefs,
   defaultEditorPrefs,
   defaultTerminalPrefs,
   defaultUsagePrefs,
   defaultWorkspace,
+  type AppearancePrefs,
   type EditorPrefs,
   type Preset,
   type Project,
@@ -36,6 +39,7 @@ export type Dialog =
   | { type: "customCommand" }
   | { type: "update" }
   | { type: "deleteChat"; conversationId: string }
+  | { type: "deleteBacklogItem"; itemId: string }
   | { type: "revertAll"; conversationId: string; itemIds: string[] }
   | null;
 
@@ -57,6 +61,9 @@ interface AppState {
   defaultShell: string;
   editorPrefs: EditorPrefs;
   terminalPrefs: TerminalPrefs;
+  appearance: AppearancePrefs;
+  /** The theme in effect (Graphite system resolved against Windows). */
+  themeKey: ThemeKey;
   railCollapsed: boolean;
   screen: Screen;
   settingsSection: SettingsSection;
@@ -90,6 +97,8 @@ export const useApp = create<AppState>(() => ({
   defaultShell: "pwsh",
   editorPrefs: defaultEditorPrefs,
   terminalPrefs: defaultTerminalPrefs,
+  appearance: defaultAppearancePrefs,
+  themeKey: "hud",
   railCollapsed: false,
   screen: "workspace",
   settingsSection: "ai",

@@ -4,8 +4,10 @@ import type { ReactNode } from "react";
 export function Header({ tag, title, body }: { tag: string; title: string; body: string }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="font-mono text-[11px] text-accent">▸ CONFIG // {tag}</span>
-      <h1 className="glow-text m-0 font-display text-[30px] font-bold tracking-[0.1em] uppercase">{title}</h1>
+      <span className="font-mono text-[11px] text-accent graphite:hidden">▸ CONFIG // {tag}</span>
+      <h1 className="glow-text m-0 font-display text-[30px] font-bold tracking-[0.1em] uppercase graphite:text-[24px] graphite:font-semibold">
+        {title}
+      </h1>
       <p className="m-0 text-[13px] text-body">{body}</p>
     </div>
   );

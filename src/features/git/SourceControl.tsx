@@ -62,7 +62,7 @@ export function SidebarSwitch({ projectId }: { projectId: string }) {
       className={cn(
         "flex h-[30px] items-center justify-center gap-1.5 border-0 font-display text-[11.5px] font-bold tracking-[0.14em] uppercase transition-colors duration-200",
         id === "files" ? "flex-1" : "flex-[1.5] border-l border-line",
-        side === id ? "bg-accent/12 text-accent shadow-[inset_0_-2px_0_#4DA3FF]" : "bg-transparent text-muted hover:text-fg",
+        side === id ? "bg-accent/12 text-accent shadow-[inset_0_-2px_0_var(--color-accent)]" : "bg-transparent text-muted hover:text-fg",
       )}
     >
       {label}
@@ -75,7 +75,7 @@ export function SidebarSwitch({ projectId }: { projectId: string }) {
       {tab(
         "scm",
         "Source control",
-        count > 0 && <span className="flex h-4 min-w-4 items-center justify-center bg-accent px-1 font-mono text-[9.5px] font-normal tracking-normal text-on-accent">{count}</span>,
+        count > 0 && <span className="flex h-4 min-w-4 items-center justify-center bg-accent-fill px-1 font-mono text-[9.5px] font-normal tracking-normal text-on-accent">{count}</span>,
       )}
     </div>
   );
@@ -402,7 +402,7 @@ function CommitBox({ projectId, status: s, g }: { projectId: string; status: Git
           type="button"
           disabled={blocked}
           onClick={() => void commit(projectId)}
-          className="chamfer flex-1 truncate border-0 bg-accent px-3 font-display text-[12.5px] font-bold tracking-[0.14em] text-on-accent uppercase transition-[filter] duration-200 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
+          className="chamfer flex-1 truncate border-0 bg-accent-fill px-3 font-display text-[12.5px] font-bold tracking-[0.14em] text-on-accent uppercase transition-[filter] duration-200 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
         >
           {label}
         </button>
@@ -411,7 +411,7 @@ function CommitBox({ projectId, status: s, g }: { projectId: string; status: Git
           title="Commit & push (Ctrl Shift Enter)"
           disabled={blocked || s.head.detached}
           onClick={() => void commit(projectId, true)}
-          className="w-[84px] border-0 bg-accent font-display text-[12.5px] font-bold tracking-[0.14em] text-on-accent uppercase hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
+          className="w-[84px] border-0 bg-accent-fill font-display text-[12.5px] font-bold tracking-[0.14em] text-on-accent uppercase hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
         >
           &amp; Push
         </button>
@@ -451,7 +451,7 @@ function Check2(p: { checked: boolean; disabled?: boolean; onChange: () => void;
       onClick={p.onChange}
       className={cn("flex items-center gap-2 border-0 bg-transparent p-0 text-left text-[12px]", p.disabled ? "text-dim" : "text-body hover:text-fg")}
     >
-      <span className={cn("size-3 shrink-0 border", p.checked ? "border-accent bg-accent shadow-[inset_0_0_0_2px_#0A111A]" : "border-line-strong")} />
+      <span className={cn("size-3 shrink-0 border", p.checked ? "border-accent-fill bg-accent-fill shadow-[inset_0_0_0_2px_var(--color-surface)]" : "border-line-strong")} />
       <span>{p.label}</span>
       <span className={cn("ml-auto truncate font-mono text-[9.5px]", p.noteTone ?? "text-muted")}>{p.note}</span>
     </button>

@@ -28,7 +28,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
       <input
         ref={ref}
         className={cn(
-          "h-[34px] min-w-0 border border-line bg-well px-2.5 outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-dim focus:border-accent focus:shadow-[0_0_12px_rgba(77,163,255,0.3)]",
+          "h-[34px] min-w-0 rounded-ctl border border-line bg-well px-2.5 graphite:border-line-strong outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-dim focus:border-accent hud:focus:shadow-[0_0_12px_rgba(77,163,255,0.3)] graphite:focus:shadow-[0_0_0_3px_var(--color-accent-subtle)]",
           mono && "font-mono text-[12.5px]",
           className,
         )}
@@ -44,7 +44,7 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
   return (
     <select
       className={cn(
-        "h-[34px] border border-line bg-well px-2 outline-none focus:border-accent focus:shadow-[0_0_12px_rgba(77,163,255,0.3)]",
+        "h-[34px] rounded-ctl border border-line bg-well px-2 outline-none graphite:border-line-strong focus:border-accent hud:focus:shadow-[0_0_12px_rgba(77,163,255,0.3)] graphite:focus:shadow-[0_0_0_3px_var(--color-accent-subtle)]",
         className,
       )}
       {...props}
@@ -64,11 +64,18 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
       title={label}
       onClick={() => onChange(!checked)}
       className={cn(
-        "flex h-5 w-[38px] shrink-0 border p-0.5 transition-colors duration-200",
-        checked ? "justify-end border-accent bg-accent/18" : "justify-start border-line-strong bg-transparent",
+        "flex h-5 w-[38px] shrink-0 border p-0.5 transition-colors duration-200 graphite:h-4 graphite:w-7 graphite:rounded-full graphite:border-0",
+        checked
+          ? "justify-end border-accent bg-accent/18 graphite:bg-accent-fill"
+          : "justify-start border-line-strong bg-transparent graphite:bg-line-strong",
       )}
     >
-      <span className={cn("size-3.5", checked ? "bg-accent shadow-[0_0_8px_#4DA3FF]" : "bg-line-strong")} />
+      <span
+        className={cn(
+          "size-3.5 graphite:m-px graphite:size-2.5 graphite:rounded-full",
+          checked ? "bg-accent-fill hud:shadow-[0_0_8px_#4DA3FF] graphite:bg-on-accent" : "bg-line-strong graphite:bg-raised",
+        )}
+      />
     </button>
   );
 }
@@ -83,13 +90,13 @@ export function ArgsInput({ id, value, onChange }: { id: string; value: string[]
   };
   return (
     <div
-      className="flex min-h-[34px] flex-wrap items-center gap-1.5 border border-line bg-well p-1.5 focus-within:border-accent focus-within:shadow-[0_0_12px_rgba(77,163,255,0.3)]"
+      className="flex min-h-[34px] flex-wrap items-center gap-1.5 rounded-ctl border border-line bg-well p-1.5 graphite:border-line-strong focus-within:border-accent hud:focus-within:shadow-[0_0_12px_rgba(77,163,255,0.3)] graphite:focus-within:shadow-[0_0_0_3px_var(--color-accent-subtle)]"
       onClick={(e) => (e.currentTarget.querySelector("input") as HTMLInputElement | null)?.focus()}
     >
       {value.map((arg, i) => (
         <span
           key={`${arg}-${i}`}
-          className="inline-flex h-[22px] items-center gap-1 border border-accent/40 bg-accent/8 pr-1 pl-2 font-mono text-[12px]"
+          className="inline-flex h-[22px] items-center gap-1 rounded-chip border border-accent/40 bg-accent/8 pr-1 pl-2 font-mono text-[12px] graphite:border-transparent graphite:bg-track"
         >
           {arg}
           <button

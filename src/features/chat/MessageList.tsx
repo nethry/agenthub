@@ -113,7 +113,7 @@ export function MessageList({ conv }: { conv: Conversation }) {
         <button
           type="button"
           onClick={() => toBottom(true)}
-          className="absolute bottom-3 left-1/2 flex h-7 -translate-x-1/2 items-center gap-1.5 border border-accent/50 bg-[rgba(10,17,26,0.97)] px-3 font-mono text-[10.5px] text-accent shadow-[0_0_14px_rgba(77,163,255,0.2)] hover:text-accent-hover"
+          className="absolute bottom-3 left-1/2 flex h-7 -translate-x-1/2 items-center gap-1.5 border border-accent/50 bg-overlay/97 px-3 font-mono text-[10.5px] text-accent hud:shadow-[0_0_14px_rgba(77,163,255,0.2)] hover:text-accent-hover"
         >
           <ArrowDown className="size-3" />
           JUMP TO LATEST

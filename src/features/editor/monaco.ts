@@ -1,5 +1,7 @@
-// Monaco is bundled locally (no CDN) and themed to Midnight HUD.
+// Monaco is bundled locally (no CDN) and themed to Midnight HUD and Graphite
+// (`MONACO_THEME`; app/appearance.ts switches it).
 import * as monaco from "monaco-editor";
+import { GRAPHITE_EDITOR } from "@/app/themePalettes";
 import EditorWorker from "monaco-editor/editor/editor.worker?worker";
 import JsonWorker from "monaco-editor/language/json/json.worker?worker";
 import CssWorker from "monaco-editor/language/css/css.worker?worker";
@@ -88,6 +90,71 @@ monaco.editor.defineTheme("midnight-hud", {
     "editorWarning.foreground": "#FFB547",
   },
 });
+
+for (const [name, p] of Object.entries(GRAPHITE_EDITOR)) {
+  const fg = (hex: string) => hex.slice(1);
+  monaco.editor.defineTheme(name, {
+    base: name === "graphite-light" ? "vs" : "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "", foreground: fg(p.text) },
+      { token: "keyword", foreground: fg(p.keyword) },
+      { token: "storage", foreground: fg(p.keyword) },
+      { token: "string", foreground: fg(p.string) },
+      { token: "string.escape", foreground: fg(p.number) },
+      { token: "comment", foreground: fg(p.comment) },
+      { token: "number", foreground: fg(p.number) },
+      { token: "type", foreground: fg(p.type) },
+      { token: "type.identifier", foreground: fg(p.type) },
+      { token: "identifier.function", foreground: fg(p.fn) },
+      { token: "delimiter", foreground: fg(p.punct) },
+      { token: "operator", foreground: fg(p.operator) },
+      { token: "tag", foreground: fg(p.tag) },
+      { token: "attribute.name", foreground: fg(p.attr) },
+      { token: "attribute.value", foreground: fg(p.string) },
+      { token: "key", foreground: fg(p.fn) },
+      { token: "string.key.json", foreground: fg(p.fn) },
+      { token: "string.value.json", foreground: fg(p.string) },
+      { token: "variable", foreground: fg(p.text) },
+      { token: "regexp", foreground: fg(p.regexp) },
+    ],
+    colors: {
+      "editor.background": p.background,
+      "editor.foreground": p.text,
+      "editorLineNumber.foreground": p.lineNumber,
+      "editorLineNumber.activeForeground": p.lineNumberActive,
+      "editorCursor.foreground": p.cursor,
+      "editor.lineHighlightBackground": p.lineHighlight,
+      "editor.lineHighlightBorder": "#00000000",
+      "editor.selectionBackground": p.selection,
+      "editor.inactiveSelectionBackground": p.selectionInactive,
+      "editor.findMatchBackground": p.find,
+      "editor.findMatchHighlightBackground": p.findHighlight,
+      "editorGutter.background": p.background,
+      "editorIndentGuide.background1": p.borderSubtle,
+      "editorIndentGuide.activeBackground1": p.borderStrong,
+      "editorWhitespace.foreground": p.border,
+      "editorWidget.background": p.widget,
+      "editorWidget.border": p.borderStrong,
+      "editorSuggestWidget.background": p.widget,
+      "editorSuggestWidget.border": p.borderStrong,
+      "editorSuggestWidget.selectedBackground": p.selectionInactive,
+      "editorHoverWidget.background": p.widget,
+      "editorHoverWidget.border": p.borderStrong,
+      "input.background": p.background,
+      "input.border": p.borderStrong,
+      "focusBorder": p.focus,
+      "scrollbarSlider.background": `${p.borderStrong}99`,
+      "scrollbarSlider.hoverBackground": p.borderStrong,
+      "scrollbarSlider.activeBackground": p.lineNumber,
+      "editorOverviewRuler.border": "#00000000",
+      "editorBracketMatch.background": p.selectionInactive,
+      "editorBracketMatch.border": p.borderStrong,
+      "editorError.foreground": p.danger,
+      "editorWarning.foreground": p.warning,
+    },
+  });
+}
 
 export function languageFor(path: string): string {
   const name = path.split("/").pop() ?? path;

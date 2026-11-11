@@ -268,7 +268,7 @@ export interface AppError {
   message: string;
 }
 
-export type View = "overview" | "chat" | "editor" | "terminals";
+export type View = "overview" | "chat" | "backlog" | "editor" | "terminals";
 export type PaneLayout = "single" | "columns" | "two-over-one";
 
 /** Per-project UI state persisted to SQLite (no live handles). */
@@ -331,6 +331,16 @@ export interface TerminalPrefs {
 
 export const defaultEditorPrefs: EditorPrefs = { fontSize: 12.5, wordWrap: false, minimap: false };
 export const defaultTerminalPrefs: TerminalPrefs = { fontSize: 12, scrollback: 5000 };
+
+/** App theme: Midnight HUD (dark only) or Graphite light/dark, or Graphite following Windows. */
+export type ThemePref = "midnight-hud" | "graphite-light" | "graphite-dark" | "graphite-system";
+
+/** The `appearance` setting. */
+export interface AppearancePrefs {
+  theme: ThemePref;
+}
+
+export const defaultAppearancePrefs: AppearancePrefs = { theme: "midnight-hud" };
 
 // ---------- Chat (agents and direct APIs) ----------
 
@@ -452,7 +462,72 @@ export type ItemBody =
   | { kind: "error"; error: ChatError }
   | { kind: "attachment"; path: string; text: string; truncated: boolean }
   /** A pasted image; its bytes stay in AgentHub's app data folder (see `ipc.chatImage`). */
-  | { kind: "image"; id: string; name: string; mime: string; size: number };
+  | { kind: "image"; id: string; name: string; mime: string; size: number }
+  /** The backlog item the message is about, as the agent got it; `label` is "FEAT-12 · Title". */
+  | { kind: "backlog_context"; itemId: string; label: string; text: string };
+
+// ---------- backlog ----------
+
+export type BacklogKind = "feature" | "bug";
+export type BacklogStatus = "open" | "planned" | "in_progress" | "review" | "done" | "dropped";
+export type BacklogPriority = "low" | "normal" | "high";
+/** Why a chat was started from an item. */
+export type BacklogPurpose = "plan" | "investigate" | "implement" | "fix";
+
+export interface BacklogImage {
+  id: string;
+  name: string;
+  mime: string;
+  size: number;
+  createdAt: number;
+}
+
+export interface BacklogLink {
+  conversationId: string;
+  purpose: BacklogPurpose;
+  createdAt: number;
+}
+
+export interface BacklogItem {
+  id: string;
+  projectId: string;
+  /** Per project, shared by both kinds (`FEAT-12`, `BUG-13`). */
+  seq: number;
+  kind: BacklogKind;
+  title: string;
+  body: string;
+  status: BacklogStatus;
+  priority: BacklogPriority;
+  plan: string | null;
+  related: string[];
+  /** Oldest first. */
+  images: BacklogImage[];
+  /** Oldest first. */
+  links: BacklogLink[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface NewBacklogItem {
+  projectId: string;
+  kind: BacklogKind;
+  title: string;
+  body: string;
+  priority: BacklogPriority;
+}
+
+export interface BacklogPatch {
+  title?: string;
+  body?: string;
+  priority?: BacklogPriority;
+  related?: string[];
+}
+
+/** The item a chat message is about (`chat_send`). */
+export interface BacklogRef {
+  itemId: string;
+  purpose: BacklogPurpose;
+}
 
 /** An image pasted into the composer, sent with the next message. */
 export interface NewImage {
@@ -609,6 +684,8 @@ export interface ChatPrefs {
   customModels: Partial<Record<EngineId, string[]>>;
   sendKey: "enter" | "ctrlEnter";
   listCollapsed: boolean;
+  listWidth: number;
+  panelWidth: number;
   anthropic: { maxTokens: number };
 }
 
@@ -620,5 +697,7 @@ export const defaultChatPrefs: ChatPrefs = {
   customModels: {},
   sendKey: "enter",
   listCollapsed: false,
+  listWidth: 268,
+  panelWidth: 380,
   anthropic: { maxTokens: 64000 },
 };

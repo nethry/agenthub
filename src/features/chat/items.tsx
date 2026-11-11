@@ -4,6 +4,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Check, ChevronRight, FileText, Lock, Play, Shield } from "lucide-react";
 import { openFile, prefillTerminal } from "@/app/actions";
 import { Button } from "@/components/ui/button";
+import { SavePlanButton } from "@/features/backlog/ChatLinks";
 import type { ChatItem, Conversation, Decision, ItemBody, PermissionRequest, PlanStep, ToolKind } from "@/lib/types";
 import { ipc } from "@/lib/ipc";
 import { basename, cn, dirname } from "@/lib/utils";
@@ -37,7 +38,9 @@ export function Chip({ kind, small }: { kind: keyof typeof CHIP; small?: boolean
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center border font-display font-bold tracking-[0.14em] whitespace-nowrap uppercase",
+        "inline-flex shrink-0 items-center rounded-chip border font-display font-bold tracking-[0.14em] whitespace-nowrap uppercase",
+        // Graphite: a subtle filled badge instead of the bordered HUD chip.
+        "graphite:border-transparent! graphite:bg-[color-mix(in_srgb,currentColor_14%,transparent)] graphite:font-semibold",
         small ? "h-4 px-1 text-[9.5px]" : "h-5 px-1.5 text-[11px]",
         c.live && "live-glow",
       )}
@@ -201,7 +204,7 @@ export const PermissionCard = memo(function PermissionCard({ item, conv, cwd }: 
       ref={ref}
       role="alertdialog"
       aria-label="Permission required"
-      className="hud hud-warn rise border border-warn/55 bg-warn/[0.05] shadow-[0_0_24px_rgba(255,181,71,0.08)]"
+      className="hud hud-warn rise border border-warn/55 bg-warn/[0.05] hud:shadow-[0_0_24px_rgba(255,181,71,0.08)]"
     >
       <div className="flex items-center gap-2.5 border-b border-warn/20 px-3.5 py-2.5">
         <Shield className="size-4 text-warn" />
@@ -331,6 +334,7 @@ export function PlanView({ steps, explanation, conv, canImplement }: { steps: Pl
         >
           {copied ? "Copied" : "Copy as Markdown"}
         </Button>
+        <SavePlanButton conv={conv} plan={() => planMarkdown(steps, explanation)} />
         <Button
           size="sm"
           onClick={() => {

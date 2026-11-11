@@ -3,9 +3,11 @@
 // (`openFile`, `prefillTerminal`, `fsChanged`) for that.
 import { currentProjectId, get as getApp, set as setApp, setView, toast } from "@/app/store";
 import { chatChannel, errorKind, errorMessage, ipc, onEnginesChanged } from "@/lib/ipc";
+import { readDataUrl } from "@/lib/utils";
 import {
   defaultChatPrefs,
   type ApprovalPolicy,
+  type BacklogRef,
   type ChatEvent,
   type ChatItem,
   type ChatMessage,
@@ -35,6 +37,7 @@ import {
   workspaceKey,
 } from "./models";
 import { draftKey, getChat, setChat, type ChatState, type NewChatConfig } from "./store";
+import { LIST_MIN, PANEL_MIN, panelWidth } from "./layout";
 
 // ---------- loading ----------
 
@@ -87,6 +90,8 @@ export function parsePrefs(raw: string | undefined): ChatPrefs {
     return {
       ...defaultChatPrefs,
       ...v,
+      listWidth: panelWidth(v.listWidth, 268, LIST_MIN, 480),
+      panelWidth: panelWidth(v.panelWidth, 380, PANEL_MIN, 800),
       defaultGeneralEngine: v.defaultGeneralEngine ?? legacyGeneral ?? defaultChatPrefs.defaultGeneralEngine,
       models,
       customModels,
@@ -236,13 +241,6 @@ export function attachFile(key: string, path: string) {
 
 export function detachFile(key: string, path: string) {
   setChat((s) => ({ attachments: { ...s.attachments, [key]: (s.attachments[key] ?? []).filter((p) => p !== path) } }));
-}
-
-async function readDataUrl(file: Blob): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let bin = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return `data:${file.type};base64,${btoa(bin)}`;
 }
 
 /**
@@ -409,6 +407,20 @@ function readyError(engine: EngineId): string | null {
   return null;
 }
 
+/** Called after a message about a backlog item was sent (the Backlog refreshes its links). */
+let onBacklogSent: ((ref: BacklogRef, conversationId: string) => void) | null = null;
+export function setOnBacklogSent(cb: typeof onBacklogSent) {
+  onBacklogSent = cb;
+}
+
+/** Removes the backlog context from a draft (the chip's ✕). */
+export function detachBacklog(key: string) {
+  setChat((s) => {
+    const { [key]: _gone, ...rest } = s.backlog;
+    return { backlog: rest };
+  });
+}
+
 /** Sends the composer text (with attachments). Creates the chat on the first message. */
 export async function sendMessage(text: string, projectId: string | null = chatProject()): Promise<boolean> {
   const s = getChat();
@@ -424,7 +436,11 @@ export async function sendMessage(text: string, projectId: string | null = chatP
   const key = draftKey(ws, cfg.conversation?.id ?? null);
   const attachments = s.attachments[key] ?? [];
   const images = s.images[key] ?? [];
-  setChat((st) => ({ drafts: { ...st.drafts, [key]: "" }, attachments: { ...st.attachments, [key]: [] }, images: { ...st.images, [key]: [] } }));
+  const backlog = s.backlog[key] ?? null;
+  setChat((st) => {
+    const { [key]: _sent, ...rest } = st.backlog;
+    return { drafts: { ...st.drafts, [key]: "" }, attachments: { ...st.attachments, [key]: [] }, images: { ...st.images, [key]: [] }, backlog: rest };
+  });
 
   let conversationId = cfg.conversation?.id ?? null;
   let created = false;
@@ -452,7 +468,8 @@ export async function sendMessage(text: string, projectId: string | null = chatP
       });
     }
     const pasted = images.map((i) => ({ name: i.name, data: i.url.slice(i.url.indexOf(",") + 1) }));
-    await ipc.chatSend(conversationId, text, attachments, pasted, chatChannel(handleChatEvent));
+    await ipc.chatSend(conversationId, text, attachments, pasted, backlog, chatChannel(handleChatEvent));
+    if (backlog) onBacklogSent?.(backlog, conversationId);
     return true;
   } catch (e) {
     if (created && conversationId) {
@@ -468,6 +485,7 @@ export async function sendMessage(text: string, projectId: string | null = chatP
       drafts: { ...st.drafts, [back]: text },
       attachments: { ...st.attachments, [back]: attachments },
       images: { ...st.images, [back]: images },
+      backlog: backlog ? { ...st.backlog, [back]: backlog } : st.backlog,
       composerError: errorMessage(e),
     }));
     if (errorKind(e) === "missing_key") void refreshProviders();

@@ -1,7 +1,10 @@
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { Splitter } from "@/components/ui/splitter";
+import { chatLayout, LIST_MIN, PANEL_MIN, TRANSCRIPT_MIN } from "./layout";
 import { Bot, MoreHorizontal, PanelLeftOpen, PanelRight, Pencil, Trash2 } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { IconButton } from "@/components/ui/button";
+import { LinkedItemChip } from "@/features/backlog/ChatLinks";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/menu";
 import type { ChatMode, Conversation } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -15,6 +18,7 @@ import {
   requestDeleteConversation,
   requestMode,
   setDraft,
+  setChatPrefs,
   stopGenerating,
   toggleConversationList,
 } from "./actions";
@@ -24,7 +28,7 @@ import { ChatSidebar, RenameInput } from "./ChatSidebar";
 import { Composer } from "./Composer";
 import { Chip } from "./items";
 import { MessageList } from "./MessageList";
-import { ENGINE_LABEL, engineOn, isAgent, MODE_META, modelLabel, POLICY_LABEL, statusChip, workspaceKey } from "./models";
+import { ENGINE_LABEL, engineOn, isAgent, MODE_META, modelLabel, POLICY_LABEL, statusChip, tint, workspaceKey } from "./models";
 import { draftKey, getChat, setChat, useChat } from "./store";
 
 /** The only AI surface: a workspace's conversations, transcript, composer and changes. */
@@ -35,6 +39,18 @@ export function ChatView({ projectId, projectName }: { projectId: string | null;
   const conv = useChat((s) => activeConversation(s, projectId));
   const panelOpen = useChat((s) => s.panel.open);
   const rootRef = useRef<HTMLDivElement>(null);
+  const listWidth = useChat((s) => s.prefs.listWidth);
+  const panelWidth = useChat((s) => s.prefs.panelWidth);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setWidth(el.clientWidth));
+    setWidth(el.clientWidth);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (getChat().loaded) void refreshProviders();
@@ -60,11 +76,16 @@ export function ChatView({ projectId, projectName }: { projectId: string | null;
   };
 
   const showPanel = !!conv && isAgent(conv.engine) && panelOpen && !focus;
+  const showList = !collapsed && !focus;
+  const sizes = chatLayout(width, listWidth, panelWidth, showList, showPanel);
 
   return (
-    <div ref={rootRef} className="flex min-h-0 min-w-0 flex-1" onKeyDown={onKeyDown}>
-      {!collapsed && !focus && <ChatSidebar projectId={projectId} projectName={projectName} />}
-      <section className="relative flex min-w-0 flex-1 flex-col">
+    <div ref={rootRef} className="flex min-h-0 min-w-0 flex-1 overflow-x-auto" onKeyDown={onKeyDown}>
+      {showList && <>
+        <ChatSidebar projectId={projectId} projectName={projectName} width={sizes.list} />
+        <Splitter label="Resize conversations" side="left" value={sizes.list} min={LIST_MIN} max={sizes.listMax} onChange={(v) => setChatPrefs({ listWidth: v })} />
+      </>}
+      <section style={{ minWidth: TRANSCRIPT_MIN }} className="relative flex flex-1 flex-col">
         {conv && <ConversationHeader conv={conv} collapsed={collapsed || focus} />}
         {!loaded ? (
           <div className="flex flex-1 items-center justify-center font-mono text-[11px] text-muted">LOADING CHATS…</div>
@@ -78,7 +99,10 @@ export function ChatView({ projectId, projectName }: { projectId: string | null;
           <div className="mx-auto max-w-[760px]">{loaded && <Composer projectId={projectId} />}</div>
         </div>
       </section>
-      {showPanel && <ChangesPanel conv={conv} />}
+      {showPanel && <>
+        <Splitter label="Resize changes and activity" side="right" value={sizes.panel} min={PANEL_MIN} max={sizes.panelMax} onChange={(v) => setChatPrefs({ panelWidth: v })} />
+        <ChangesPanel conv={conv} width={sizes.panel} />
+      </>}
     </div>
   );
 }
@@ -105,10 +129,11 @@ function ConversationHeader({ conv, collapsed }: { conv: Conversation; collapsed
           {conv.title}
         </h2>
       )}
+      <LinkedItemChip conv={conv} />
       {conv.projectId && (
         <span
           className="inline-flex h-5 shrink-0 items-center border px-1.5 font-display text-[11px] font-bold tracking-[0.14em] uppercase"
-          style={{ borderColor: `${mode.color}8C`, color: mode.color }}
+          style={{ borderColor: tint(mode.tone, 55), color: mode.color }}
         >
           {mode.label}
         </span>
@@ -160,7 +185,7 @@ function ModeConfirmBar({ projectId, projectName }: { projectId: string | null; 
       <div
         role="alertdialog"
         aria-label="Switch to Agent mode"
-        className="hud hud-agent rise mx-auto flex max-w-[760px] flex-wrap items-center gap-3.5 border border-agent/50 bg-surface px-3.5 py-3 shadow-[0_0_24px_rgba(56,225,255,0.1)]"
+        className="hud hud-agent rise mx-auto flex max-w-[760px] flex-wrap items-center gap-3.5 border border-agent/50 bg-surface px-3.5 py-3 hud:shadow-[0_0_24px_rgba(56,225,255,0.1)]"
       >
         <Bot className="size-[18px] text-agent" />
         <span className="flex min-w-[260px] flex-1 flex-col gap-0.5">
@@ -180,7 +205,7 @@ function ModeConfirmBar({ projectId, projectName }: { projectId: string | null; 
         <button
           type="button"
           onClick={confirmAgentMode}
-          className="chamfer h-[30px] border-0 bg-accent px-3.5 font-display text-[12.5px] font-bold tracking-[0.14em] text-on-accent uppercase hover:bg-accent-hover"
+          className="chamfer h-[30px] border-0 bg-accent-fill px-3.5 font-display text-[12.5px] font-bold tracking-[0.14em] text-on-accent uppercase hover:bg-accent-fill-hover"
         >
           Switch to Agent
         </button>
@@ -226,7 +251,7 @@ function EmptyChat({ projectId, projectName, collapsed }: { projectId: string | 
       )}
       <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-7 pt-14 pb-6">
         <div className="rise flex w-full max-w-[760px] flex-col items-center gap-4 text-center">
-          <HexMark className="size-[42px] drop-shadow-[0_0_10px_rgba(77,163,255,0.55)] [stroke-width:1.2]" />
+          <HexMark className="size-[42px] hud:drop-shadow-[0_0_10px_rgba(77,163,255,0.55)] [stroke-width:1.2]" />
           <h1 className="glow-text m-0 font-display text-[30px] leading-[34px] font-bold tracking-[0.08em] uppercase">
             {projectId ? (hasChats ? `New chat in ${projectName}` : `No chats in ${projectName} yet`) : "Ask anything"}
           </h1>
@@ -241,7 +266,7 @@ function EmptyChat({ projectId, projectName, collapsed }: { projectId: string | 
                 key={s.text}
                 type="button"
                 onClick={() => fill(s.text, s.mode)}
-                className="flex flex-col items-start gap-1.5 border border-line bg-[rgba(10,17,26,0.85)] px-3.5 py-3 text-left transition-colors duration-200 hover:border-line-strong hover:bg-accent/5"
+                className="flex flex-col items-start gap-1.5 border border-line bg-overlay/85 px-3.5 py-3 text-left transition-colors duration-200 hover:border-line-strong hover:bg-accent/5"
               >
                 {projectId && (
                   <span

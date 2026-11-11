@@ -34,7 +34,7 @@ export function StatusDot({
         aria-hidden="true"
         className={cn(
           "inline-block size-[5px] shrink-0",
-          activity === "busy" ? "busy-pulse" : cn("bg-run", !activity && glow && "shadow-[0_0_6px_#3DF5A0]"),
+          activity === "busy" ? "busy-pulse" : cn("bg-run", !activity && glow && "hud:shadow-[0_0_6px_#3DF5A0]"),
           className,
         )}
       />
@@ -66,10 +66,10 @@ export function activityTitle(s: StatusView): string | undefined {
 }
 
 const chipTone: Record<SessionStatus, string> = {
-  starting: "border-warn/50 bg-warn/8 text-warn",
-  running: "border-run/45 bg-run/8 text-run",
-  exited: "border-line-strong text-muted",
-  failed: "border-danger/50 bg-danger/8 text-danger",
+  starting: "border-warn/50 bg-warn/8 text-warn graphite:bg-warn/15",
+  running: "border-run/45 bg-run/8 text-run graphite:bg-run/15",
+  exited: "border-line-strong text-muted graphite:bg-track",
+  failed: "border-danger/50 bg-danger/8 text-danger graphite:bg-danger/15",
 };
 
 const inlineTone: Record<SessionStatus, string> = {
@@ -79,7 +79,7 @@ const inlineTone: Record<SessionStatus, string> = {
   failed: "text-danger",
 };
 
-const busyChipTone = "border-warn/50 bg-warn/8 text-warn";
+const busyChipTone = "border-warn/50 bg-warn/8 text-warn graphite:bg-warn/15";
 
 /** Process status: color + glyph + label, never color alone. */
 export function StatusChip({
@@ -100,7 +100,7 @@ export function StatusChip({
       className={cn(
         "inline-flex shrink-0 items-center gap-1.5 font-display text-[11px] font-bold tracking-[0.14em] uppercase whitespace-nowrap",
         variant === "chip"
-          ? cn("border px-1.5 py-px", busy ? busyChipTone : chipTone[session.status])
+          ? cn("rounded-chip border px-1.5 py-px graphite:border-transparent graphite:font-semibold", busy ? busyChipTone : chipTone[session.status])
           : busy
             ? "text-warn"
             : inlineTone[session.status],

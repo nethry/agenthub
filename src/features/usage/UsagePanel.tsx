@@ -10,13 +10,13 @@ import type { ChatMessage, EngineId, LimitWindow, ProviderUsage, UsagePrefs } fr
 import { cn } from "@/lib/utils";
 import { PROVIDERS, current, emptyLabel, isExpired, level, pctText, resetText, syncedText, type Level, type UsageProvider } from "./format";
 
-const FILL: Record<Level, string> = { normal: "#4DA3FF", warn: "#FFB547", limit: "#FF5470" };
+const FILL: Record<Level, string> = { normal: "var(--color-accent)", warn: "var(--color-warn)", limit: "var(--color-danger)" };
 const TEXT: Record<Level, string> = { normal: "text-fg", warn: "text-warn", limit: "text-danger" };
 
 /** Segmented bar: top = 5-hour session, bottom = weekly in compact places. */
 function Meter({ label, w, lvl, size }: { label: string; w: LimitWindow | null; lvl: Level; size: "sm" | "lg" }) {
   const pct = w ? Math.min(100, Math.max(0, w.usedPercent)) : 0;
-  const seg = size === "lg" ? "transparent 0 10px, #0A111A 10px 12px" : "transparent 0 7px, #0A111A 7px 9px";
+  const seg = size === "lg" ? "transparent 0 10px, var(--color-surface) 10px 12px" : "transparent 0 7px, var(--color-surface) 7px 9px";
   return (
     <div
       role="meter"
@@ -131,7 +131,7 @@ function UsageDetails({ provider: p, onConfigure }: { provider: (typeof PROVIDER
     <div
       role="dialog"
       aria-labelledby="usage-title"
-      className="hud flex w-[520px] max-w-[calc(100vw-24px)] flex-col border border-accent/45 bg-[rgba(10,17,26,0.97)] shadow-[0_0_50px_rgba(77,163,255,0.14),0_24px_64px_rgba(0,0,0,0.6)]"
+      className="hud flex w-[520px] max-w-[calc(100vw-24px)] flex-col border border-accent/45 bg-overlay/97 hud:shadow-[0_0_50px_rgba(77,163,255,0.14),0_24px_64px_rgba(0,0,0,0.6)] graphite:shadow-(--shadow-pop)"
     >
       <div className="flex items-center justify-between border-b border-line px-[18px] py-3.5">
         <h2 id="usage-title" className="m-0 font-display text-[18px] font-bold tracking-[0.12em] uppercase">
@@ -270,8 +270,8 @@ function WindowDetail({
           className={cn(
             "font-mono text-[20px]",
             !live ? "text-muted" : lvl === "normal" ? "text-accent" : TEXT[lvl],
-            lvl === "warn" && "[text-shadow:0_0_10px_rgba(255,181,71,0.45)]",
-            lvl === "limit" && "[text-shadow:0_0_10px_rgba(255,84,112,0.45)]",
+            lvl === "warn" && "hud:[text-shadow:0_0_10px_rgba(255,181,71,0.45)]",
+            lvl === "limit" && "hud:[text-shadow:0_0_10px_rgba(255,84,112,0.45)]",
           )}
         >
           {live ? pctText(live) : "—"}

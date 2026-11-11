@@ -199,7 +199,7 @@ export function FileTree({ projectId, width }: { projectId: string; width: numbe
             style={{ paddingLeft: 23 + depth * 16 }}
             className={cn(
               "flex h-[26px] w-full items-center gap-1.5 border-0 pr-2 text-left",
-              active ? "bg-accent/10 shadow-[inset_0_0_0_1px_rgba(77,163,255,0.35)]" : "bg-transparent text-term hover:bg-accent/5",
+              active ? "bg-accent/10 hud:shadow-[inset_0_0_0_1px_rgba(77,163,255,0.35)]" : "bg-transparent text-term hover:bg-accent/5",
             )}
           >
             <File className={cn("size-[13px] shrink-0", fileTone(e.name))} />
@@ -374,7 +374,7 @@ function NameInput({
           if (performance.now() - mountedAt.current < 250) ref.current?.focus();
           else finish(true);
         }}
-        className="h-[22px] min-w-0 flex-1 border border-accent/60 bg-well px-1.5 font-sans text-[12.5px] text-fg shadow-[0_0_8px_rgba(77,163,255,0.25)] outline-none"
+        className="h-[22px] min-w-0 flex-1 border border-accent/60 bg-well px-1.5 font-sans text-[12.5px] text-fg hud:shadow-[0_0_8px_rgba(77,163,255,0.25)] outline-none"
       />
     </div>
   );

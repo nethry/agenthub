@@ -1,5 +1,6 @@
 //! Tauri command handlers: thin wrappers that validate input and delegate.
 
+pub mod backlog;
 pub mod git;
 pub mod updates;
 
@@ -58,12 +59,14 @@ pub fn rename_project(state: State<'_, AppState>, id: String, name: String) -> A
     projects::rename(&state.db, &id, &name)
 }
 
-/// Forget a project and end its sessions. Never deletes anything on disk.
+/// Forget a project and end its sessions. Never deletes anything in the
+/// project folder; its backlog items (app data) go with it.
 #[tauri::command]
 pub fn remove_project(state: State<'_, AppState>, id: String) -> AppResult<()> {
     state.terminals.close_project(&id);
     state.watchers.unwatch(&id);
     state.git.forget(&id);
+    state.backlog.forget_project(&id);
     projects::remove(&state.db, &id)
 }
 
@@ -89,7 +92,8 @@ pub fn save_workspace_state(state: State<'_, AppState>, project_id: String, valu
 
 // ---------- settings ----------
 
-const SETTING_KEYS: &[&str] = &["default_shell", "ui", "editor", "terminal", "usage", "chat", "git", "updates"];
+const SETTING_KEYS: &[&str] =
+    &["default_shell", "ui", "editor", "terminal", "usage", "chat", "git", "updates", "appearance"];
 
 #[tauri::command]
 pub fn get_settings(state: State<'_, AppState>) -> AppResult<HashMap<String, String>> {
@@ -441,6 +445,7 @@ pub async fn chat_send(
     content: String,
     attachments: Option<Vec<String>>,
     images: Option<Vec<NewImage>>,
+    backlog: Option<crate::backlog::BacklogRef>,
     on_event: Channel<ChatEvent>,
 ) -> AppResult<String> {
     state.chat.send(
@@ -448,6 +453,7 @@ pub async fn chat_send(
         &content,
         &attachments.unwrap_or_default(),
         &images.unwrap_or_default(),
+        backlog.as_ref(),
         channel_sink(on_event),
     )
 }

@@ -5,6 +5,7 @@ import { Button, IconButton } from "@/components/ui/button";
 import { Splitter } from "@/components/ui/splitter";
 import { useActiveSession } from "@/features/terminals/useActiveSession";
 import { NewSessionMenu } from "@/features/terminals/NewSessionMenu";
+import { BacklogView } from "@/features/backlog/BacklogView";
 import { ChatView } from "@/features/chat/ChatView";
 import { newChat, toggleChatFocus } from "@/features/chat/actions";
 import { engineOn, needsAttention } from "@/features/chat/models";
@@ -20,7 +21,8 @@ import { cn } from "@/lib/utils";
 
 const VIEWS: { id: View; label: string }[] = [
   { id: "overview", label: "Overview" },
-  { id: "chat", label: "Chat" },
+  { id: "chat", label: "Agents" },
+  { id: "backlog", label: "Backlog" },
   { id: "editor", label: "Code" },
   { id: "terminals", label: "Terminals" },
 ];
@@ -54,6 +56,7 @@ export function Workspace({ projectId }: { projectId: string }) {
         >
           {ws.view === "overview" && <OverviewDashboard projectId={projectId} />}
           {ws.view === "chat" && <ChatView projectId={projectId} projectName={project.name} />}
+          {ws.view === "backlog" && <BacklogView projectId={projectId} />}
           {ws.view === "editor" && (
             <div className="flex min-h-0 flex-1 flex-col pt-4">
               <WorkArea projectId={projectId} />
@@ -119,7 +122,7 @@ function WorkspaceHeader({
   const views = projectId ? VIEWS : VIEWS.filter((v) => v.id === "chat");
 
   return (
-    <div className="flex h-12 shrink-0 items-center gap-3.5 border-b border-line bg-[rgba(5,8,13,0.85)] pr-3.5 pl-5">
+    <div className="flex h-12 shrink-0 items-center gap-3.5 border-b border-line bg-ground/85 pr-3.5 pl-5">
       <h1 className="glow-text m-0 max-w-[40%] shrink-0 truncate font-display text-[20px] font-bold tracking-[0.14em] uppercase">{name}</h1>
       {projectId && <BranchChip projectId={projectId} />}
 
@@ -136,12 +139,12 @@ function WorkspaceHeader({
               className={cn(
                 "flex h-[30px] items-center gap-2 border-0 px-3.5 font-display text-[13px] tracking-[0.14em] uppercase transition-colors duration-200",
                 i > 0 && "border-l border-line",
-                selected ? "bg-accent/12 font-bold text-accent shadow-[inset_0_-2px_0_#4DA3FF]" : "bg-transparent font-semibold text-muted hover:text-fg",
+                selected ? "bg-accent/12 font-bold text-accent shadow-[inset_0_-2px_0_var(--color-accent)]" : "bg-transparent font-semibold text-muted hover:text-fg",
               )}
             >
               {v.label}
               {v.id === "chat" && attention > 0 && (
-                <span className="flex h-[15px] min-w-[15px] items-center justify-center bg-warn px-[3px] font-mono text-[9px] tracking-normal text-on-accent" title={`${attention} need you`}>
+                <span className="flex h-[15px] min-w-[15px] items-center justify-center bg-warn px-[3px] font-mono text-[9px] tracking-normal hud:text-on-accent graphite:text-ground" title={`${attention} need you`}>
                   {attention}
                 </span>
               )}

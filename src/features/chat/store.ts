@@ -6,6 +6,7 @@ import { create } from "zustand";
 import {
   defaultChatPrefs,
   type ApprovalPolicy,
+  type BacklogRef,
   type ChatMessage,
   type ChatMode,
   type ChatPrefs,
@@ -56,6 +57,8 @@ export interface ChatState {
   drafts: Record<string, string>;
   attachments: Record<string, string[]>;
   images: Record<string, PendingImage[]>;
+  /** The backlog item a draft is about (its context goes with the message). */
+  backlog: Record<string, BacklogRef>;
   /** New-chat settings per workspace key; absent follows the defaults. */
   newChat: Record<string, NewChatConfig>;
   /** A send that failed before it started (e.g. no key, engine missing). */
@@ -84,6 +87,7 @@ export const initialChatState = (): ChatState => ({
   drafts: {},
   attachments: {},
   images: {},
+  backlog: {},
   newChat: {},
   composerError: null,
   engines: [],

@@ -7,6 +7,8 @@ import { MarkdownView } from "@/features/editor/MarkdownPreview";
 it("adds document navigation and copy controls without turning instructions into executable actions", () => {
   const html = renderToStaticMarkup(<MarkdownView projectId="p" path="README.md" tools text={'# Build\n\n```sh\npnpm build\n```\n\n# Build'} />);
   expect(html).toContain('aria-label="Jump to document heading"');
+  expect(html).toContain('aria-haspopup="menu"');
+  expect(html).not.toMatch(/<(select|option)\b/);
   expect(html).toContain('data-anchor="build"');
   expect(html).toContain('data-anchor="build-1"');
   expect(html).toContain('aria-label="Copy code block"');

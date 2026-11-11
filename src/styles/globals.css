@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/*
+ * Themes: <html data-theme="hud|graphite" data-mode="dark|light"> (src/app/theme.ts).
+ * Components use the semantic tokens below; Graphite re-maps them further down.
+ * Decoration that only Midnight HUD has (glows, text-shadows) is written with
+ * the `hud:` variant, Graphite-only styling with `graphite:`.
+ */
+@custom-variant hud (&:where([data-theme="hud"], [data-theme="hud"] *));
+@custom-variant graphite (&:where([data-theme="graphite"], [data-theme="graphite"] *));
+
 /* Midnight HUD tokens — see README "Visual direction". */
 @theme {
   --color-ground: #05080d;
@@ -12,9 +21,14 @@
   /* Empty part of usage meters. */
   --color-track: #14243a;
 
+  /* Accent for text, borders and indicators; `accent-fill` for solid fills (primary buttons). */
   --color-accent: #4da3ff;
   --color-accent-hover: #a8d1ff;
+  --color-accent-fill: #4da3ff;
+  --color-accent-fill-hover: #a8d1ff;
   --color-on-accent: #020a18;
+  /* Graphite's focus ring; unused by Midnight HUD. */
+  --color-accent-subtle: #4da3ff33;
 
   --color-fg: #dcebff;
   --color-body: #a3b8cf;
@@ -29,9 +43,27 @@
   --color-on-danger: #1a0207;
   --color-tag: #b79cff;
   /* v2 unified Chat: mode colors (always paired with a label) and the user-message fill. */
+  --color-ask: #4da3ff;
   --color-plan: #b79cff;
   --color-agent: #38e1ff;
   --color-raised: #0f1a28;
+
+  /* Menus and popovers, the dialog scrim, neutral hover, text selection, skeleton shimmer. */
+  --color-overlay: #0a111a;
+  --color-scrim: rgb(2 5 9 / 0.72);
+  --color-hover: rgb(77 163 255 / 0.05);
+  --color-selection: rgb(77 163 255 / 0.35);
+  --color-skel: #18283c;
+  /* Diff text, project badge initials. */
+  --color-diff-add-fg: #c9f7de;
+  --color-diff-del-fg: #ffc2cc;
+  --color-badge: #a9bcd1;
+
+  /* Square in Midnight HUD; Graphite rounds controls, chips, cards and dialogs. */
+  --radius-ctl: 0px;
+  --radius-chip: 0px;
+  --radius-card: 0px;
+  --radius-dialog: 0px;
 
   --font-display: "Rajdhani", sans-serif;
   --font-sans: "Chakra Petch", "Segoe UI", sans-serif;
@@ -43,6 +75,9 @@
   body,
   #root {
     height: 100%;
+  }
+  [data-theme="hud"] {
+    color-scheme: dark;
   }
   body {
     margin: 0;
@@ -81,7 +116,7 @@
     outline-offset: 1px;
   }
   ::selection {
-    background: rgb(77 163 255 / 0.35);
+    background: var(--color-selection);
   }
   /* Lucide icons: 1.5 stroke, square caps, miter joins. */
   svg.lucide {
@@ -177,7 +212,7 @@
   /* BUSY: running and active (orange). The steady shadow stays under reduced motion. */
   .busy-pulse {
     background-color: var(--color-warn);
-    box-shadow: 0 0 7px 1px #ffb547;
+    box-shadow: 0 0 7px 1px var(--color-warn);
     animation: busy-pulse 1.6s ease-in-out infinite;
   }
 
@@ -295,7 +330,7 @@
 }
 .md-preview a {
   text-decoration: underline;
-  text-decoration-color: rgb(77 163 255 / 0.4);
+  text-decoration-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
   text-underline-offset: 2px;
 }
 .md-preview code {
@@ -439,7 +474,7 @@
 }
 .chat-md a {
   text-decoration: underline;
-  text-decoration-color: rgb(77 163 255 / 0.4);
+  text-decoration-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
   text-underline-offset: 2px;
 }
 .chat-md :not(pre) > code {
@@ -447,7 +482,7 @@
   font-size: 12.5px;
   padding: 1px 5px;
   border: 1px solid var(--color-line);
-  background: #0f1a28;
+  background: var(--color-raised);
   color: var(--color-accent-hover);
 }
 .chat-md blockquote {
@@ -528,7 +563,7 @@
   animation-delay: 0.3s;
 }
 .skel {
-  background: linear-gradient(90deg, #0f1a28 0, #18283c 50%, #0f1a28 100%);
+  background: linear-gradient(90deg, var(--color-raised) 0, var(--color-skel) 50%, var(--color-raised) 100%);
   background-size: 400px 100%;
   animation: chat-shimmer 1.4s linear infinite;
 }
@@ -595,6 +630,181 @@
 @media (prefers-reduced-motion: reduce) {
   .live-glow,
   .rise {
+    animation: none !important;
+  }
+}
+
+/*
+ * Graphite: calm theme for long sessions (design canvas page "Theme · Graphite").
+ * Neutral greys, one desaturated blue, Inter in sentence case, soft corners,
+ * no glow, brackets, chamfers, grid or scanlines. Dark and light share every
+ * dimension; only these tokens change. Keep in sync with src/app/themePalettes.ts.
+ */
+[data-theme="graphite"] {
+  --font-display: "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --radius-ctl: 5px;
+  --radius-chip: 4px;
+  --radius-card: 8px;
+  --radius-dialog: 10px;
+}
+[data-theme="graphite"][data-mode="dark"] {
+  color-scheme: dark;
+  --color-ground: #16171a;
+  --color-surface: #1c1d21;
+  --color-well: #131416;
+  --color-raised: #232429;
+  --color-overlay: #2a2b31;
+  --color-line: #2c2e34;
+  --color-line-strong: #3a3d45;
+  --color-line-dim: #222328;
+  --color-dash: #3a3d45;
+  --color-track: #2e3036;
+  --color-accent: #7fb0ea;
+  --color-accent-hover: #e3e6eb;
+  --color-accent-fill: #3570b8;
+  --color-accent-fill-hover: #3169ae;
+  --color-on-accent: #ffffff;
+  --color-accent-subtle: #1e2b3c;
+  --color-fg: #d5d8de;
+  --color-body: #a0a5af;
+  --color-term: #d5d8de;
+  --color-muted: #888e99;
+  --color-dim: #5a5f69;
+  --color-run: #5fb07f;
+  --color-warn: #d3a24a;
+  --color-danger: #e06a6a;
+  --color-danger-soft: #ee8a8a;
+  --color-on-danger: #ffffff;
+  --color-tag: #a995db;
+  --color-ask: #7fb0ea;
+  --color-plan: #a995db;
+  --color-agent: #5dbdb8;
+  --color-scrim: rgb(8 9 11 / 0.6);
+  --color-hover: #26282d;
+  --color-selection: #24344a;
+  --color-skel: #2e3036;
+  --color-diff-add-fg: #b5dfc3;
+  --color-diff-del-fg: #edb8b8;
+  --color-badge: #a0a5af;
+  --shadow-pop: 0 12px 32px rgb(0 0 0 / 0.45);
+}
+[data-theme="graphite"][data-mode="light"] {
+  color-scheme: light;
+  --color-ground: #eef0f3;
+  --color-surface: #f7f8fa;
+  --color-well: #f7f8fa;
+  --color-raised: #ffffff;
+  --color-overlay: #ffffff;
+  --color-line: #d9dde3;
+  --color-line-strong: #c3c9d1;
+  --color-line-dim: #e4e7eb;
+  --color-dash: #c3c9d1;
+  --color-track: #e0e4ea;
+  --color-accent: #245fa6;
+  --color-accent-hover: #1a3f70;
+  --color-accent-fill: #2f6db8;
+  --color-accent-fill-hover: #2962a7;
+  --color-on-accent: #ffffff;
+  --color-accent-subtle: #e3edf9;
+  --color-fg: #272a31;
+  --color-body: #4f5560;
+  --color-term: #272a31;
+  --color-muted: #656b76;
+  --color-dim: #a2a8b1;
+  --color-run: #2c7a4b;
+  --color-warn: #8a5f0e;
+  --color-danger: #b83a3a;
+  --color-danger-soft: #b83a3a;
+  --color-on-danger: #ffffff;
+  --color-tag: #6a50b0;
+  --color-ask: #245fa6;
+  --color-plan: #6a50b0;
+  --color-agent: #1f7f7a;
+  --color-scrim: rgb(30 34 40 / 0.32);
+  --color-hover: #e8ebef;
+  --color-selection: #ccddf2;
+  --color-skel: #e0e4ea;
+  --color-diff-add-fg: #1f5a35;
+  --color-diff-del-fg: #8a2626;
+  --color-badge: #4f5560;
+  --shadow-pop: 0 12px 32px rgb(20 24 30 / 0.16);
+}
+
+@layer components {
+  [data-theme="graphite"] .hud {
+    border-radius: var(--radius-card);
+  }
+  [data-theme="graphite"] .hud::before,
+  [data-theme="graphite"] .hud::after {
+    display: none;
+  }
+  [data-theme="graphite"] .chamfer {
+    clip-path: none;
+    border-radius: var(--radius-ctl);
+  }
+  [data-theme="graphite"] :is(.gridbg, .scan) {
+    background-image: none;
+  }
+  [data-theme="graphite"] .glow-text {
+    text-shadow: none;
+  }
+  [data-theme="graphite"] .busy-pulse {
+    box-shadow: none;
+    animation: graphite-pulse 1.6s ease-in-out infinite;
+  }
+  [data-theme="graphite"] .label-caps {
+    font-weight: 600;
+  }
+  [data-theme="graphite"] .kbd {
+    border-radius: 3px;
+    border-bottom-width: 2px;
+  }
+}
+
+/*
+ * Graphite is sentence case: hierarchy from size and weight, never caps. This
+ * one block undoes the HUD's uppercase and letter-spacing utilities instead of
+ * branching every component. Text written in capitals in the source stays so.
+ */
+[data-theme="graphite"] :is(.uppercase, .label-caps) {
+  text-transform: none;
+}
+[data-theme="graphite"] :is([class*="tracking-"], .label-caps) {
+  letter-spacing: normal;
+}
+[data-theme="graphite"] :focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+[data-theme="graphite"] ::-webkit-scrollbar-thumb {
+  background-color: var(--color-line-strong);
+  border-radius: 999px;
+}
+[data-theme="graphite"] .live-glow {
+  animation: none;
+}
+[data-theme="graphite"] .chat-md.is-streaming > :last-child::after {
+  width: 2px;
+  box-shadow: none;
+}
+[data-theme="graphite"] .md-preview :is(h1, h2, h3, h4, h5, h6) {
+  letter-spacing: normal;
+  font-weight: 600;
+}
+[data-theme="graphite"] .md-preview :is(h4, h5, h6) {
+  text-transform: none;
+}
+[data-theme="graphite"] :is(.md-preview, .chat-md) :is(code, pre) {
+  border-radius: 4px;
+}
+@keyframes graphite-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="graphite"] .busy-pulse {
     animation: none !important;
   }
 }

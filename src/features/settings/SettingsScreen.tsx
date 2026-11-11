@@ -12,6 +12,7 @@ import { AiIntegrationsSection, ChatSection } from "./AiIntegrationsSection";
 import { GitSection } from "./GitSection";
 import { UpdatesPanel } from "./UpdatesPanel";
 import { Header, Panel, Row } from "./parts";
+import { ThemePicker } from "./ThemePicker";
 
 const SECTIONS: { id: SettingsSection; label: string }[] = [
   { id: "general", label: "General" },
@@ -30,7 +31,7 @@ export function SettingsScreen() {
     <div className="flex min-h-0 flex-1">
       <nav
         aria-label="Settings"
-        className="flex w-[232px] shrink-0 flex-col gap-0.5 border-r border-line bg-[rgba(5,8,13,0.85)] px-2.5 py-3.5 font-display text-[13px] font-semibold tracking-[0.12em] uppercase"
+        className="flex w-[232px] shrink-0 flex-col gap-0.5 border-r border-line bg-ground/85 px-2.5 py-3.5 font-display text-[13px] font-semibold tracking-[0.12em] uppercase"
       >
         <button
           onClick={() => set({ screen: "workspace" })}
@@ -157,11 +158,13 @@ function AppearanceSection() {
   const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   return (
     <div className="flex flex-col gap-6">
-      <Header tag="APPEARANCE" title="Appearance" body="Midnight HUD is AgentHub's only theme." />
+      <Header tag="APPEARANCE" title="Appearance" body="Theme for the whole app. Changes apply instantly and are saved for this computer." />
       <Panel>
-        <Row label="Theme" hint="Dark-only, square corners, one accent.">
-          <span className="font-mono text-[12px] text-accent">MIDNIGHT HUD</span>
-        </Row>
+        <div className="flex flex-col gap-2.5">
+          <span className="font-semibold">Theme</span>
+          <ThemePicker />
+        </div>
+        <div className="border-t border-line" />
         <Row label="Motion" hint="Follows the Windows “Animation effects” setting.">
           <span className="font-mono text-[12px] text-muted">{reduced ? "REDUCED" : "FULL · 180–280 MS"}</span>
         </Row>

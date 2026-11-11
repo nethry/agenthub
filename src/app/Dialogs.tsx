@@ -10,6 +10,8 @@ import { UnsavedDialog } from "@/features/editor/UnsavedDialog";
 import { DeleteEntryDialog } from "@/features/explorer/DeleteEntryDialog";
 import { DeleteChatDialog, RevertAllDialog } from "@/features/chat/DeleteChatDialog";
 import { UpdateDialog } from "@/features/updates/UpdateDialog";
+import { deleteItem } from "@/features/backlog/actions";
+import { DeleteBacklogItemDialog } from "@/features/backlog/ItemDetail";
 import { ipc } from "@/lib/ipc";
 import { saveAllAndQuit } from "./actions";
 import { cn } from "@/lib/utils";
@@ -32,6 +34,17 @@ export function Dialogs() {
       return <DeleteEntryDialog projectId={dialog.projectId} path={dialog.path} isDir={dialog.isDir} />;
     case "deleteChat":
       return <DeleteChatDialog conversationId={dialog.conversationId} />;
+    case "deleteBacklogItem":
+      return (
+        <DeleteBacklogItemDialog
+          itemId={dialog.itemId}
+          onClose={() => set({ dialog: null })}
+          onDelete={() => {
+            set({ dialog: null });
+            void deleteItem(dialog.itemId);
+          }}
+        />
+      );
     case "revertAll":
       return <RevertAllDialog conversationId={dialog.conversationId} itemIds={dialog.itemIds} />;
     case "customCommand":
@@ -112,7 +125,7 @@ export function Toasts() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className={cn(
-              "hud pointer-events-auto flex items-start gap-3 border bg-surface px-3.5 py-3 text-[12.5px] shadow-[0_16px_48px_rgba(0,0,0,0.5)]",
+              "hud pointer-events-auto flex items-start gap-3 border bg-surface px-3.5 py-3 text-[12.5px] hud:shadow-[0_16px_48px_rgba(0,0,0,0.5)] graphite:shadow-(--shadow-pop)",
               t.tone === "danger" ? "hud-danger border-danger/50" : t.tone === "warn" ? "hud-warn border-warn/50" : "border-accent/40",
             )}
           >

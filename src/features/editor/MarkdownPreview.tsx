@@ -3,7 +3,7 @@ import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ImageOff, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/form";
+import { HeadingMenu } from "./HeadingMenu";
 import { toast } from "@/app/store";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { openFile } from "@/app/actions";
@@ -85,10 +85,7 @@ export function MarkdownView({
 
   return (<>
     {tools && <div className="shrink-0 border-b border-line px-2 py-1.5">
-      <Select aria-label="Jump to document heading" value="" disabled={!headings.length} className="h-7 w-full min-w-0 text-[12px]" onChange={(e) => scrollRef.current?.querySelector(`[data-anchor="${CSS.escape(e.target.value)}"]`)?.scrollIntoView({ block: "start" })}>
-        <option value="">{headings.length ? "Jump to heading…" : "No headings in this document"}</option>
-        {headings.map((h) => <option key={h.id} value={h.id}>{h.text}</option>)}
-      </Select>
+      <HeadingMenu headings={headings} onSelect={(id) => scrollRef.current?.querySelector(`[data-anchor="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "start" })} />
     </div>}
     <div
       ref={scrollRef}

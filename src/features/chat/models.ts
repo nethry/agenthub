@@ -151,9 +151,9 @@ export const chatModes = (inProject: boolean): ChatMode[] => (inProject ? AGENT_
 export const chatEngines = (inProject: boolean): EngineId[] => (inProject ? AGENT_ENGINES : API_ENGINES);
 
 export const MODE_META: Record<ChatMode, { label: string; color: string; tone: string; hint: string }> = {
-  ask: { label: "Ask", color: "#4DA3FF", tone: "accent", hint: "ANSWERS ONLY · NO FILE OR TOOL ACCESS" },
-  plan: { label: "Plan", color: "#B79CFF", tone: "plan", hint: "READS PROJECT FILES · NO EDITS OR COMMANDS" },
-  agent: { label: "Agent", color: "#38E1FF", tone: "agent", hint: "EDITS FILES · RUNS TOOLS WITH YOUR APPROVAL" },
+  ask: { label: "Ask", color: "var(--color-ask)", tone: "accent", hint: "ANSWERS ONLY · NO FILE OR TOOL ACCESS" },
+  plan: { label: "Plan", color: "var(--color-plan)", tone: "plan", hint: "READS PROJECT FILES · NO EDITS OR COMMANDS" },
+  agent: { label: "Agent", color: "var(--color-agent)", tone: "agent", hint: "EDITS FILES · RUNS TOOLS WITH YOUR APPROVAL" },
 };
 
 export const POLICY_ORDER: ApprovalPolicy[] = ["ask", "auto_edits", "auto_all"];
@@ -257,16 +257,21 @@ export function newChatEngine(prefs: ChatPrefs, engines: EngineInfo[], inProject
 
 // ---------- status chips ----------
 
+/** A theme colour token at `pct`% opacity, for inline styles. */
+export function tint(token: string, pct: number): string {
+  return `color-mix(in srgb, var(--color-${token}) ${pct}%, transparent)`;
+}
+
 export type ChipKind = "streaming" | "running" | "approval" | "interrupted" | "error" | "stopped" | "done";
 
 export const CHIP: Record<ChipKind, { label: string; color: string; border: string; live: boolean }> = {
-  streaming: { label: "Streaming", color: "#4DA3FF", border: "rgba(77,163,255,0.5)", live: true },
-  running: { label: "Running", color: "#38E1FF", border: "rgba(56,225,255,0.5)", live: true },
-  approval: { label: "Approve", color: "#FFB547", border: "rgba(255,181,71,0.55)", live: false },
-  interrupted: { label: "Interrupted", color: "#FFB547", border: "rgba(255,181,71,0.55)", live: false },
-  error: { label: "Error", color: "#FF5470", border: "rgba(255,84,112,0.55)", live: false },
-  stopped: { label: "Stopped", color: "#8AA0B8", border: "#3A4F69", live: false },
-  done: { label: "Done", color: "#3DF5A0", border: "rgba(61,245,160,0.45)", live: false },
+  streaming: { label: "Streaming", color: "var(--color-accent)", border: tint("accent", 50), live: true },
+  running: { label: "Running", color: "var(--color-agent)", border: tint("agent", 50), live: true },
+  approval: { label: "Approve", color: "var(--color-warn)", border: tint("warn", 55), live: false },
+  interrupted: { label: "Interrupted", color: "var(--color-warn)", border: tint("warn", 55), live: false },
+  error: { label: "Error", color: "var(--color-danger)", border: tint("danger", 55), live: false },
+  stopped: { label: "Stopped", color: "var(--color-muted)", border: "var(--color-line-strong)", live: false },
+  done: { label: "Done", color: "var(--color-run)", border: tint("run", 45), live: false },
 };
 
 /** Chip for a conversation; `null` when it's idle. Done only shows for agents. */

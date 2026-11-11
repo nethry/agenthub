@@ -1,3 +1,4 @@
+mod backlog;
 mod chat;
 mod commands;
 mod error;
@@ -26,6 +27,7 @@ pub struct AppState {
     pub watchers: Watchers,
     pub usage: Arc<usage::Usage>,
     pub chat: Arc<chat::ChatService>,
+    pub backlog: backlog::Backlog,
     pub git: Arc<git::GitService>,
     pub updates: updates::Updates,
     pub data_dir: PathBuf,
@@ -56,6 +58,32 @@ fn sidecar_script(app: &AppHandle) -> Option<PathBuf> {
     bundled.into_iter().chain(dev).find(|p| p.is_file())
 }
 
+/// Window background and native theme for the saved `appearance` setting
+/// (same colours as the app ground in src/app/themePalettes.ts). Graphite
+/// system follows Windows, so its native theme is left to the OS.
+fn startup_window_style(appearance: Option<&str>, os_dark: bool) -> (tauri::window::Color, Option<tauri::Theme>) {
+    use tauri::{window::Color, Theme};
+    let theme = appearance
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+        .and_then(|v| v.get("theme").and_then(|t| t.as_str()).map(str::to_owned));
+    let light = match theme.as_deref() {
+        Some("graphite-light") => true,
+        Some("graphite-system") => !os_dark,
+        _ => false,
+    };
+    let background = match theme.as_deref() {
+        _ if light => Color(0xEE, 0xF0, 0xF3, 0xFF),
+        Some("graphite-dark" | "graphite-system") => Color(0x16, 0x17, 0x1A, 0xFF),
+        _ => Color(0x05, 0x08, 0x0D, 0xFF),
+    };
+    let native = match theme.as_deref() {
+        Some("graphite-system") => None,
+        _ if light => Some(Theme::Light),
+        _ => Some(Theme::Dark),
+    };
+    (background, native)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -67,6 +95,14 @@ pub fn run() {
             std::fs::create_dir_all(&data_dir)?;
             let db = Arc::new(Db::open(&data_dir.join("agenthub.db"))?);
             presets::seed_defaults(&db)?;
+            if let Some(window) = app.get_webview_window("main") {
+                // Match the saved theme before the webview paints (no dark frame on a light theme).
+                let os_dark = window.theme().map_or(true, |t| t == tauri::Theme::Dark);
+                let appearance = db.get_setting("appearance").ok().flatten();
+                let (background, theme) = startup_window_style(appearance.as_deref(), os_dark);
+                let _ = window.set_background_color(Some(background));
+                let _ = window.set_theme(theme);
+            }
             let terminals =
                 TerminalManager::new(TauriSink(app.handle().clone()), terminals::shells::detect());
             let handle = app.handle().clone();
@@ -109,8 +145,10 @@ pub fn run() {
                     let _ = handle.emit("git-changed", change);
                 }),
             ));
+            let backlog = backlog::Backlog::new(Arc::clone(&db), data_dir.join("backlog-images"));
             app.manage(AppState {
                 db,
+                backlog,
                 chat,
                 git,
                 updates: updates::Updates::default(),
@@ -190,6 +228,16 @@ pub fn run() {
             commands::updates::update_download,
             commands::updates::update_downloaded,
             commands::updates::update_install,
+            commands::backlog::backlog_list,
+            commands::backlog::backlog_create,
+            commands::backlog::backlog_update,
+            commands::backlog::backlog_set_status,
+            commands::backlog::backlog_set_plan,
+            commands::backlog::backlog_delete,
+            commands::backlog::backlog_add_images,
+            commands::backlog::backlog_remove_image,
+            commands::backlog::backlog_image,
+            commands::backlog::backlog_context_preview,
             commands::git::git_info,
             commands::git::git_set_path,
             commands::git::git_status,
@@ -221,4 +269,30 @@ pub fn run() {
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::startup_window_style;
+    use tauri::{window::Color, Theme};
+
+    const HUD: Color = Color(0x05, 0x08, 0x0D, 0xFF);
+    const DARK: Color = Color(0x16, 0x17, 0x1A, 0xFF);
+    const LIGHT: Color = Color(0xEE, 0xF0, 0xF3, 0xFF);
+
+    #[test]
+    fn startup_window_follows_the_saved_theme() {
+        assert_eq!(startup_window_style(None, false), (HUD, Some(Theme::Dark)));
+        assert_eq!(startup_window_style(Some(r#"{"theme":"midnight-hud"}"#), false), (HUD, Some(Theme::Dark)));
+        assert_eq!(startup_window_style(Some(r#"{"theme":"graphite-dark"}"#), false), (DARK, Some(Theme::Dark)));
+        assert_eq!(startup_window_style(Some(r#"{"theme":"graphite-light"}"#), true), (LIGHT, Some(Theme::Light)));
+        assert_eq!(startup_window_style(Some(r#"{"theme":"graphite-system"}"#), true), (DARK, None));
+        assert_eq!(startup_window_style(Some(r#"{"theme":"graphite-system"}"#), false), (LIGHT, None));
+    }
+
+    #[test]
+    fn startup_window_ignores_bad_settings() {
+        assert_eq!(startup_window_style(Some("not json"), false), (HUD, Some(Theme::Dark)));
+        assert_eq!(startup_window_style(Some(r#"{"theme":"neon"}"#), false), (HUD, Some(Theme::Dark)));
+    }
 }

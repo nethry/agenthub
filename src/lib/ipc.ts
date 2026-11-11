@@ -5,6 +5,11 @@ import type {
   AppError,
   AppInfo,
   ApprovalPolicy,
+  BacklogItem,
+  BacklogPatch,
+  BacklogRef,
+  BacklogStatus,
+  NewBacklogItem,
   ChangedFile,
   ChatEvent,
   ChatItem,
@@ -152,8 +157,8 @@ export const ipc = {
   chatSetPolicy: (id: string, policy: ApprovalPolicy) => invoke<Conversation>("chat_set_policy", { id, policy }),
   chatDeleteConversation: (id: string) => invoke<void>("chat_delete_conversation", { id }),
   /** Returns the request id; the turn streams on `onEvent`. */
-  chatSend: (conversationId: string, content: string, attachments: string[], images: NewImage[], onEvent: Channel<ChatEvent>) =>
-    invoke<string>("chat_send", { conversationId, content, attachments, images, onEvent }),
+  chatSend: (conversationId: string, content: string, attachments: string[], images: NewImage[], backlog: BacklogRef | null, onEvent: Channel<ChatEvent>) =>
+    invoke<string>("chat_send", { conversationId, content, attachments, images, backlog, onEvent }),
   /** A pasted image of a message, as a `data:` URL. */
   chatImage: (itemId: string) => invoke<string>("chat_image", { itemId }),
   chatRegenerate: (conversationId: string, onEvent: Channel<ChatEvent>) => invoke<string>("chat_regenerate", { conversationId, onEvent }),
@@ -180,6 +185,22 @@ export const ipc = {
   chatRemoveKey: (provider: ChatProvider) => invoke<ProviderStatus>("chat_remove_key", { provider }),
   chatTestConnection: (provider: ChatProvider, model?: string) =>
     invoke<ProviderStatus>("chat_test_connection", { provider, model: model ?? null }),
+
+  // backlog (features and bugs per project)
+  backlogList: (projectId: string) => invoke<BacklogItem[]>("backlog_list", { projectId }),
+  backlogCreate: (item: NewBacklogItem) => invoke<BacklogItem>("backlog_create", { item }),
+  backlogUpdate: (id: string, patch: BacklogPatch) => invoke<BacklogItem>("backlog_update", { id, patch }),
+  backlogSetStatus: (id: string, status: BacklogStatus) => invoke<BacklogItem>("backlog_set_status", { id, status }),
+  backlogSetPlan: (id: string, plan: string | null) => invoke<BacklogItem>("backlog_set_plan", { id, plan }),
+  /** Deletes the item and its screenshots; chats started from it stay. */
+  backlogDelete: (id: string) => invoke<void>("backlog_delete", { id }),
+  /** Checked by type (from the bytes) and size in Rust; up to 8 per item. */
+  backlogAddImages: (id: string, images: NewImage[]) => invoke<BacklogItem>("backlog_add_images", { id, images }),
+  backlogRemoveImage: (imageId: string) => invoke<BacklogItem>("backlog_remove_image", { imageId }),
+  /** A screenshot as a `data:` URL. */
+  backlogImage: (imageId: string) => invoke<string>("backlog_image", { imageId }),
+  /** The context pack a message sent now would carry. */
+  backlogContextPreview: (id: string) => invoke<string>("backlog_context_preview", { id }),
 
   // app
   appInfo: () => invoke<AppInfo>("app_info"),

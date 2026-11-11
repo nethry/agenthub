@@ -9,6 +9,7 @@ import { Kbd } from "@/components/ui/form";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuTrigger } from "@/components/ui/menu";
 import { errorKind, errorMessage } from "@/lib/ipc";
 import { basename, cn } from "@/lib/utils";
+import { MONACO_THEME } from "@/app/themePalettes";
 import { monaco, languageLabel } from "./monaco";
 import {
   ENCODINGS,
@@ -67,7 +68,8 @@ export function EditorPane({ projectId }: { projectId: string }) {
     if (!host) return;
     const editor = monaco.editor.create(host, {
       model: null,
-      theme: "midnight-hud",
+      // Monaco themes are global; app/appearance.ts switches all editors at once.
+      theme: MONACO_THEME[get().themeKey],
       fontFamily: '"JetBrains Mono", ui-monospace, monospace',
       fontSize: prefs.fontSize,
       lineHeight: 21,
@@ -186,7 +188,7 @@ export function EditorPane({ projectId }: { projectId: string }) {
               key={path}
               className={cn(
                 "group flex shrink-0 items-center border-r border-line",
-                selected ? "bg-well shadow-[inset_0_2px_0_#4DA3FF]" : "text-muted hover:text-fg",
+                selected ? "bg-well shadow-[inset_0_2px_0_var(--color-accent)]" : "text-muted hover:text-fg",
               )}
             >
               <button
@@ -199,7 +201,7 @@ export function EditorPane({ projectId }: { projectId: string }) {
               >
                 {basename(path)}
                 {fileDirty && (
-                  <span aria-label="Unsaved changes" className="size-1.5 bg-warn shadow-[0_0_6px_#FFB547]" />
+                  <span aria-label="Unsaved changes" className="size-1.5 bg-warn hud:shadow-[0_0_6px_#FFB547]" />
                 )}
               </button>
               <button
@@ -236,7 +238,7 @@ export function EditorPane({ projectId }: { projectId: string }) {
                   onClick={() => setMdView(activeKey, id)}
                   className={cn(
                     "flex h-5 items-center gap-1 border-0 px-2 text-[10.5px] uppercase transition-colors duration-200",
-                    on ? "bg-accent/10 text-accent shadow-[inset_0_0_0_1px_rgb(77_163_255/0.45)]" : "bg-transparent text-muted hover:text-fg",
+                    on ? "bg-accent/10 text-accent hud:shadow-[inset_0_0_0_1px_rgb(77_163_255/0.45)]" : "bg-transparent text-muted hover:text-fg",
                   )}
                 >
                   <Icon className="size-3" />

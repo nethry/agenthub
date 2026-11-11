@@ -118,6 +118,44 @@ const MIGRATIONS: &[&str] = &[
         WHERE id = 'codex-cli' AND builtin = 1 AND executable NOT IN ('codex', 'codex.exe');
     DELETE FROM presets WHERE builtin = 1;
     "#,
+    // v4: Backlog. Features and bugs per project (one `seq` per project for
+    // both kinds), the chats started from them, and the metadata of pasted
+    // screenshots (the files live in the app data folder, `backlog-images/`).
+    r#"
+    CREATE TABLE backlog_items (
+        id           TEXT PRIMARY KEY,
+        project_id   TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        seq          INTEGER NOT NULL,
+        kind         TEXT NOT NULL,
+        title        TEXT NOT NULL,
+        body         TEXT NOT NULL DEFAULT '',
+        status       TEXT NOT NULL DEFAULT 'open',
+        priority     TEXT NOT NULL DEFAULT 'normal',
+        plan         TEXT,
+        related_json TEXT NOT NULL DEFAULT '[]',
+        created_at   INTEGER NOT NULL,
+        updated_at   INTEGER NOT NULL,
+        UNIQUE (project_id, seq)
+    );
+    CREATE INDEX backlog_items_project ON backlog_items (project_id, status);
+    CREATE TABLE backlog_links (
+        item_id         TEXT NOT NULL REFERENCES backlog_items(id) ON DELETE CASCADE,
+        conversation_id TEXT NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+        purpose         TEXT NOT NULL,
+        created_at      INTEGER NOT NULL,
+        PRIMARY KEY (item_id, conversation_id)
+    );
+    CREATE INDEX backlog_links_conversation ON backlog_links (conversation_id);
+    CREATE TABLE backlog_images (
+        id         TEXT PRIMARY KEY,
+        item_id    TEXT NOT NULL REFERENCES backlog_items(id) ON DELETE CASCADE,
+        name       TEXT NOT NULL,
+        mime       TEXT NOT NULL,
+        size       INTEGER NOT NULL,
+        created_at INTEGER NOT NULL
+    );
+    CREATE INDEX backlog_images_item ON backlog_images (item_id, created_at);
+    "#,
 ];
 
 impl Db {
@@ -294,6 +332,32 @@ mod tests {
             c.execute("DELETE FROM projects WHERE id = 'p1'", [])?;
             let p: Option<String> = c.query_row("SELECT project_id FROM chat_conversations WHERE id = 'c1'", [], |r| r.get(0))?;
             assert_eq!(p, None);
+            Ok(())
+        })
+        .unwrap();
+    }
+
+    #[test]
+    fn v4_adds_the_backlog_to_a_v3_database() {
+        let conn = v2_database();
+        migrate_to(&conn, 3).unwrap();
+        let db = from_connection(conn).unwrap();
+        db.with(|c| {
+            let version: i64 = c.query_row("PRAGMA user_version", [], |r| r.get(0))?;
+            assert_eq!(version, MIGRATIONS.len() as i64);
+            c.execute(
+                "INSERT INTO backlog_items (id, project_id, seq, kind, title, created_at, updated_at) VALUES ('b1', 'p1', 1, 'bug', 'Crash', 1, 1)",
+                [],
+            )?;
+            c.execute("UPDATE chat_conversations SET project_id = 'p1' WHERE id = 'c1'", [])?;
+            c.execute("INSERT INTO backlog_links (item_id, conversation_id, purpose, created_at) VALUES ('b1', 'c1', 'fix', 1)", [])?;
+            assert!(
+                c.execute("INSERT INTO backlog_items (id, project_id, seq, kind, title, created_at, updated_at) VALUES ('b2', 'p1', 1, 'bug', 'Dup', 1, 1)", [])
+                    .is_err(),
+                "seq is unique per project"
+            );
+            let chats: i64 = c.query_row("SELECT COUNT(*) FROM chat_conversations", [], |r| r.get(0))?;
+            assert_eq!(chats, 2, "chat history is untouched");
             Ok(())
         })
         .unwrap();

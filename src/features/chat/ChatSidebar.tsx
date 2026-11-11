@@ -15,7 +15,7 @@ import { setChat, useChat } from "./store";
  * with its mode, engine and status. Only this workspace's chats are listed;
  * they keep running when you switch away.
  */
-export function ChatSidebar({ projectId, projectName }: { projectId: string | null; projectName: string }) {
+export function ChatSidebar({ projectId, projectName, width = 268 }: { projectId: string | null; projectName: string; width?: number }) {
   const ws = workspaceKey(projectId);
   const all = useChat((s) => s.conversations);
   const engines = useChat((s) => s.engines);
@@ -26,7 +26,7 @@ export function ChatSidebar({ projectId, projectName }: { projectId: string | nu
   const shown = mine.filter((c) => matchesSearch(c, query));
 
   return (
-    <aside aria-label="Conversations" className="flex w-[268px] shrink-0 flex-col border-r border-line bg-[rgba(5,8,13,0.85)]">
+    <aside aria-label="Conversations" style={{ width }} className="flex min-w-0 shrink-0 flex-col border-r border-line bg-ground/85">
       <div className="flex items-center gap-2 px-3 pt-3 pb-2">
         <button
           type="button"
@@ -106,7 +106,7 @@ function ConversationItem({ conv, active, now }: { conv: Conversation; active: b
         title={conv.title}
         className={cn(
           "flex w-full items-start gap-2.5 border-0 px-2.5 py-[9px] text-left transition-colors duration-200",
-          active ? "bg-accent/10 shadow-[inset_2px_0_0_#4DA3FF]" : "bg-transparent hover:bg-accent/5",
+          active ? "bg-accent/10 shadow-[inset_2px_0_0_var(--color-accent)]" : "bg-transparent hover:bg-accent/5",
         )}
       >
         <span className="flex min-w-0 flex-1 flex-col gap-[5px]">
@@ -182,7 +182,7 @@ export function RenameInput({ conv, className }: { conv: Conversation; className
           }
         }}
         onBlur={commit}
-        className={cn("h-7 w-full border border-accent bg-well px-2 text-[13px] shadow-[0_0_10px_rgba(77,163,255,0.3)] outline-none", className)}
+        className={cn("h-7 w-full border border-accent bg-well px-2 text-[13px] hud:shadow-[0_0_10px_rgba(77,163,255,0.3)] outline-none", className)}
       />
     </>
   );

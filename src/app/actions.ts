@@ -29,6 +29,7 @@ import { ensureChatLoaded, onAgentFilesChanged } from "@/features/chat/actions";
 import { engineOn } from "@/features/chat/models";
 import { getChat } from "@/features/chat/store";
 import { hasRunningWork, runningWork } from "./work";
+import { loadAppearance } from "./appearance";
 import { onGitTreeChanged, setGitPrefs, startGitEvents } from "@/features/git/actions";
 import { setUpdatePrefs, startUpdateEvents } from "@/features/updates/actions";
 import { get, isLive, sessionsFor, set, setView, toast, updateWorkspace, useApp, workspaceOf, type SettingsSection } from "./store";
@@ -70,6 +71,9 @@ export async function bootstrap() {
     ipc.appInfo().catch(() => null),
     terms.loadFonts(),
   ]);
+
+  // Before any editor or terminal is created, so they start in the saved theme.
+  loadAppearance(settings.appearance);
 
   const ui = parse<UiPrefs>(settings.ui, { activeProjectId: null, railCollapsed: false, workspace: "project" });
   const workspaces: Record<string, WorkspaceState> = {};

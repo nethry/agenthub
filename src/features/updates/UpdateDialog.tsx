@@ -98,7 +98,7 @@ export function UpdateDialog() {
             className="h-2 border border-line bg-well"
           >
             <div
-              className={cn("h-full bg-accent shadow-[0_0_8px_#4DA3FF] transition-[width] duration-200", pct === null && "w-1/3 animate-pulse")}
+              className={cn("h-full bg-accent hud:shadow-[0_0_8px_#4DA3FF] transition-[width] duration-200", pct === null && "w-1/3 animate-pulse")}
               style={pct === null ? undefined : { width: `${pct}%` }}
             />
           </div>
